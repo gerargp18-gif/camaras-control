@@ -7,6 +7,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body { font-family: Arial; background:#f4f6f9; padding:20px; }
@@ -50,6 +51,11 @@ th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 <p>Total equipos: <span id="total"></span></p>
 <p>Con fallas: <span id="fallas"></span></p>
 <p>Total incidencias: <span id="totalInc"></span></p>
+</div>
+
+<div class="card">
+<h2>Gráfica de estado</h2>
+<canvas id="grafica"></canvas>
 </div>
 
 <div class="card">
@@ -97,6 +103,23 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let editId = null;
+let chart;
+
+function renderChart(activos, fallas, total){
+  const ctx = document.getElementById('grafica');
+
+  if(chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: ['Activas', 'Fallas', 'Total'],
+      datasets: [{
+        data: [activos, fallas, total]
+      }]
+    }
+  });
+}
 
 function escuchar(){
   db.collection("camaras").onSnapshot(snapshot => {
@@ -104,11 +127,13 @@ function escuchar(){
     tabla.innerHTML = '';
     let total = 0;
     let fallas = 0;
+    let activas = 0;
 
     snapshot.forEach(doc => {
       let item = doc.data();
       total++;
       if(item.estado === 'Falla') fallas++;
+      if(item.estado === 'Activa') activas++;
 
       tabla.innerHTML += `
       <tr>
@@ -125,6 +150,8 @@ function escuchar(){
 
     document.getElementById('total').innerText = total;
     document.getElementById('fallas').innerText = fallas;
+
+    renderChart(activas, fallas, total);
   });
 
   db.collection("incidencias").onSnapshot(snapshot => {
@@ -156,14 +183,10 @@ function guardar(){
   if(!sucursal || !serie) return alert('Llena los campos');
 
   if(editId){
-    db.collection("camaras").doc(editId).update({
-      sucursal, tipo, serie, estado
-    });
+    db.collection("camaras").doc(editId).update({ sucursal, tipo, serie, estado });
     editId = null;
   } else {
-    db.collection("camaras").add({
-      sucursal, tipo, serie, estado
-    });
+    db.collection("camaras").add({ sucursal, tipo, serie, estado });
   }
 
   limpiar();
