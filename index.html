@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Control de Cámaras Pro</title>
+<title>Sistema Integral de Cámaras</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -15,45 +15,53 @@ body { font-family: Arial; background:#f4f6f9; padding:20px; }
 .card { background:white; padding:20px; border-radius:10px; margin-bottom:20px; box-shadow:0 2px 5px rgba(0,0,0,0.1);} 
 input, select, textarea { padding:10px; margin:5px 0; width:100%; }
 button { padding:8px 10px; margin:2px; background:#007bff; color:white; border:none; border-radius:5px; cursor:pointer; }
-.edit { background:#ffc107; color:black; }
 table { width:100%; border-collapse:collapse; }
-th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
-.bad { color:red; font-weight:bold; }
-.good { color:green; font-weight:bold; }
+th, td { padding:10px; border-bottom:1px solid #ddd; }
 </style>
 </head>
-
 <body>
 <div class="container">
 
-<!-- SELECCIONAR SUCURSAL -->
 <div class="card">
-<h2>Seleccionar Sucursal</h2>
+<h2>Sucursal</h2>
 <input id="nuevaSucursal" placeholder="Nueva sucursal">
-<button onclick="agregarSucursal()">Agregar sucursal</button>
-<select id="filtroSucursal" onchange="filtrarSucursal()"></select>
+<button onclick="addSucursal()">Agregar</button>
+<select id="sucursal" onchange="cargarTodo()"></select>
 </div>
 
-<!-- BASE DE DATOS POR SUCURSAL -->
 <div class="card">
-<h2>Equipos por Sucursal</h2>
-<input id="eqNombre" placeholder="Nombre del equipo">
+<h2>Equipos</h2>
+<input id="eqNombre" placeholder="Nombre">
 <input id="eqMarca" placeholder="Marca">
 <input id="eqModelo" placeholder="Modelo">
-<button onclick="guardarEquipo()">Guardar equipo</button>
+<button onclick="addEquipo()">Guardar</button>
+<table><tbody id="tablaEquipos"></tbody></table>
+</div>
 
-<table>
-<thead>
-<tr>
-<th>Nombre</th>
-<th>Marca</th>
-<th>Modelo</th>
-<th>Sucursal</th>
-<th>Acción</th>
-</tr>
-</thead>
-<tbody id="tablaEquipos"></tbody>
-</table>
+<div class="card">
+<h2>Cámaras</h2>
+<select id="equipoSelect"></select>
+<input id="serie" placeholder="Serie">
+<select id="estado">
+<option>Activa</option>
+<option>Falla</option>
+</select>
+<button onclick="addCamara()">Guardar</button>
+<table><tbody id="tablaCamaras"></tbody></table>
+</div>
+
+<div class="card">
+<h2>Incidencias</h2>
+<select id="camaraSelect"></select>
+<textarea id="desc"></textarea>
+<button onclick="addInc()">Guardar</button>
+<table><tbody id="tablaInc"></tbody></table>
+</div>
+
+<div class="card">
+<canvas id="grafica"></canvas>
+</div>
+
 </div>
 
 <script>
@@ -61,84 +69,88 @@ const firebaseConfig = {
   apiKey: "AIzaSyBVs7GnPPChdilJSk99WG1IPeLJKvEjxVc",
   authDomain: "camaras-control.firebaseapp.com",
   projectId: "camaras-control",
-  storageBucket: "camaras-control.firebasestorage.app",
-  messagingSenderId: "189054050500",
-  appId: "1:189054050500:web:7cff88d426ea92202fe991"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+let chart;
 
-let sucursalActual = '';
+function addSucursal(){
+ let n=document.getElementById('nuevaSucursal').value;
+ db.collection('sucursales').add({nombre:n});
+}
 
-function agregarSucursal(){
-  let nombre = document.getElementById('nuevaSucursal').value;
-  if(!nombre) return alert('Escribe una sucursal');
+function addEquipo(){
+ let s=document.getElementById('sucursal').value;
+ db.collection('equipos').add({
+  nombre:eqNombre.value,
+  marca:eqMarca.value,
+  modelo:eqModelo.value,
+  sucursal:s
+ });
+}
 
-  db.collection("sucursales").add({ nombre });
-  document.getElementById('nuevaSucursal').value = '';
+function addCamara(){
+ db.collection('camaras').add({
+  equipo:equipoSelect.value,
+  serie:serie.value,
+  estado:estado.value,
+  sucursal:sucursal.value
+ });
+}
+
+function addInc(){
+ db.collection('incidencias').add({
+  camara:camaraSelect.value,
+  descripcion:desc.value
+ });
 }
 
 function cargarSucursales(){
-  db.collection("sucursales").onSnapshot(snapshot => {
-    let select = document.getElementById('filtroSucursal');
-    select.innerHTML = '<option value="">Selecciona sucursal</option>';
+ db.collection('sucursales').onSnapshot(s=>{
+  sucursal.innerHTML='';
+  s.forEach(d=>sucursal.innerHTML+=`<option>${d.data().nombre}</option>`);
+ });
+}
 
-    snapshot.forEach(doc => {
-      let s = doc.data();
-      select.innerHTML += `<option value="${s.nombre}">${s.nombre}</option>`;
-    });
+function cargarTodo(){
+ let s=sucursal.value;
+
+ db.collection('equipos').where('sucursal','==',s).onSnapshot(sn=>{
+  tablaEquipos.innerHTML='';
+  equipoSelect.innerHTML='';
+  sn.forEach(d=>{
+    let e=d.data();
+    tablaEquipos.innerHTML+=`<tr><td>${e.nombre}</td></tr>`;
+    equipoSelect.innerHTML+=`<option>${e.nombre}</option>`;
   });
-}
+ });
 
-function filtrarSucursal(){
-  sucursalActual = document.getElementById('filtroSucursal').value;
-  cargarEquipos();
-}
+ db.collection('camaras').where('sucursal','==',s).onSnapshot(sn=>{
+  tablaCamaras.innerHTML='';
+  camaraSelect.innerHTML='';
+  let a=0,f=0;
 
-function guardarEquipo(){
-  let nombre = document.getElementById('eqNombre').value;
-  let marca = document.getElementById('eqMarca').value;
-  let modelo = document.getElementById('eqModelo').value;
-
-  if(!nombre || !sucursalActual) return alert('Selecciona sucursal');
-
-  db.collection("equipos").add({ nombre, marca, modelo, sucursal: sucursalActual });
-
-  document.getElementById('eqNombre').value = '';
-  document.getElementById('eqMarca').value = '';
-  document.getElementById('eqModelo').value = '';
-}
-
-function cargarEquipos(){
-  db.collection("equipos").onSnapshot(snapshot => {
-    let tabla = document.getElementById('tablaEquipos');
-    tabla.innerHTML = '';
-
-    snapshot.forEach(doc => {
-      let item = doc.data();
-
-      if(sucursalActual && item.sucursal !== sucursalActual) return;
-
-      tabla.innerHTML += `
-      <tr>
-        <td>${item.nombre}</td>
-        <td>${item.marca}</td>
-        <td>${item.modelo}</td>
-        <td>${item.sucursal}</td>
-        <td><button onclick="eliminarEquipo('${doc.id}')">Eliminar</button></td>
-      </tr>`;
-    });
+  sn.forEach(d=>{
+    let c=d.data();
+    tablaCamaras.innerHTML+=`<tr><td>${c.serie}</td><td>${c.estado}</td></tr>`;
+    camaraSelect.innerHTML+=`<option>${c.serie}</option>`;
+    if(c.estado==='Activa')a++; else f++;
   });
-}
 
-function eliminarEquipo(id){
-  db.collection("equipos").doc(id).delete();
+  if(chart) chart.destroy();
+  chart=new Chart(grafica,{type:'pie',data:{labels:['Activas','Fallas'],datasets:[{data:[a,f]}]}});
+ });
+
+ db.collection('incidencias').onSnapshot(sn=>{
+  tablaInc.innerHTML='';
+  sn.forEach(d=>{
+    let i=d.data();
+    tablaInc.innerHTML+=`<tr><td>${i.camara}</td><td>${i.descripcion}</td></tr>`;
+  });
+ });
 }
 
 cargarSucursales();
-cargarEquipos();
 </script>
-
 </body>
 </html>
