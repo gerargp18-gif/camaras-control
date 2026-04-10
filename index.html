@@ -26,9 +26,17 @@ th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 <body>
 <div class="container">
 
-<!-- BASE DE DATOS DE EQUIPOS -->
+<!-- SELECCIONAR SUCURSAL -->
 <div class="card">
-<h2>Base de Datos de Equipos</h2>
+<h2>Seleccionar Sucursal</h2>
+<input id="nuevaSucursal" placeholder="Nueva sucursal">
+<button onclick="agregarSucursal()">Agregar sucursal</button>
+<select id="filtroSucursal" onchange="filtrarSucursal()"></select>
+</div>
+
+<!-- BASE DE DATOS POR SUCURSAL -->
+<div class="card">
+<h2>Equipos por Sucursal</h2>
 <input id="eqNombre" placeholder="Nombre del equipo">
 <input id="eqMarca" placeholder="Marca">
 <input id="eqModelo" placeholder="Modelo">
@@ -40,80 +48,12 @@ th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 <th>Nombre</th>
 <th>Marca</th>
 <th>Modelo</th>
+<th>Sucursal</th>
 <th>Acción</th>
 </tr>
 </thead>
 <tbody id="tablaEquipos"></tbody>
 </table>
-</div>
-
-<!-- CAMARAS -->
-<div class="card">
-<h2>Registrar / Editar Cámara</h2>
-<input id="sucursal" placeholder="Sucursal">
-<input id="tipo" placeholder="Tipo de cámara">
-<input id="serie" placeholder="Número de serie">
-<select id="estado">
-<option value="Activa">Activa</option>
-<option value="Falla">Falla</option>
-<option value="Reparación">Reparación</option>
-</select>
-<button onclick="guardar()">Guardar</button>
-</div>
-
-<!-- INCIDENCIAS -->
-<div class="card">
-<h2>Registrar Incidencia</h2>
-<input id="incSerie" placeholder="Serie de la cámara">
-<textarea id="descripcion" placeholder="Descripción de la falla"></textarea>
-<button onclick="guardarIncidencia()">Guardar incidencia</button>
-</div>
-
-<!-- RESUMEN -->
-<div class="card">
-<h2>Resumen</h2>
-<p>Total equipos: <span id="total"></span></p>
-<p>Con fallas: <span id="fallas"></span></p>
-<p>Total incidencias: <span id="totalInc"></span></p>
-</div>
-
-<!-- GRAFICA -->
-<div class="card">
-<h2>Gráfica de estado</h2>
-<canvas id="grafica"></canvas>
-</div>
-
-<!-- LISTA CAMARAS -->
-<div class="card">
-<h2>Lista de cámaras</h2>
-<table>
-<thead>
-<tr>
-<th>Sucursal</th>
-<th>Tipo</th>
-<th>Serie</th>
-<th>Estado</th>
-<th>Acciones</th>
-</tr>
-</thead>
-<tbody id="tabla"></tbody>
-</table>
-</div>
-
-<!-- INCIDENCIAS LISTA -->
-<div class="card">
-<h2>Incidencias</h2>
-<table>
-<thead>
-<tr>
-<th>Serie</th>
-<th>Descripción</th>
-</tr>
-</thead>
-<tbody id="tablaInc"></tbody>
-</table>
-</div>
-
 </div>
 
 <script>
@@ -129,134 +69,75 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-let editId = null;
-let chart;
+let sucursalActual = '';
 
-function renderChart(activos, fallas, total){
-  const ctx = document.getElementById('grafica');
-  if(chart) chart.destroy();
-  chart = new Chart(ctx, {
-    type: 'pie',
-    data: {
-      labels: ['Activas', 'Fallas', 'Total'],
-      datasets: [{ data: [activos, fallas, total] }]
-    }
+function agregarSucursal(){
+  let nombre = document.getElementById('nuevaSucursal').value;
+  if(!nombre) return alert('Escribe una sucursal');
+
+  db.collection("sucursales").add({ nombre });
+  document.getElementById('nuevaSucursal').value = '';
+}
+
+function cargarSucursales(){
+  db.collection("sucursales").onSnapshot(snapshot => {
+    let select = document.getElementById('filtroSucursal');
+    select.innerHTML = '<option value="">Selecciona sucursal</option>';
+
+    snapshot.forEach(doc => {
+      let s = doc.data();
+      select.innerHTML += `<option value="${s.nombre}">${s.nombre}</option>`;
+    });
   });
 }
 
-function escuchar(){
-  // CAMARAS
-  db.collection("camaras").onSnapshot(snapshot => {
-    let tabla = document.getElementById('tabla');
+function filtrarSucursal(){
+  sucursalActual = document.getElementById('filtroSucursal').value;
+  cargarEquipos();
+}
+
+function guardarEquipo(){
+  let nombre = document.getElementById('eqNombre').value;
+  let marca = document.getElementById('eqMarca').value;
+  let modelo = document.getElementById('eqModelo').value;
+
+  if(!nombre || !sucursalActual) return alert('Selecciona sucursal');
+
+  db.collection("equipos").add({ nombre, marca, modelo, sucursal: sucursalActual });
+
+  document.getElementById('eqNombre').value = '';
+  document.getElementById('eqMarca').value = '';
+  document.getElementById('eqModelo').value = '';
+}
+
+function cargarEquipos(){
+  db.collection("equipos").onSnapshot(snapshot => {
+    let tabla = document.getElementById('tablaEquipos');
     tabla.innerHTML = '';
-    let total = 0, fallas = 0, activas = 0;
 
     snapshot.forEach(doc => {
       let item = doc.data();
-      total++;
-      if(item.estado==='Falla') fallas++;
-      if(item.estado==='Activa') activas++;
+
+      if(sucursalActual && item.sucursal !== sucursalActual) return;
 
       tabla.innerHTML += `
       <tr>
-        <td>${item.sucursal}</td>
-        <td>${item.tipo}</td>
-        <td>${item.serie}</td>
-        <td class="${item.estado==='Falla'?'bad':'good'}">${item.estado}</td>
-        <td>
-          <button class="edit" onclick="editar('${doc.id}','${item.sucursal}','${item.tipo}','${item.serie}','${item.estado}')">Editar</button>
-          <button onclick="eliminar('${doc.id}')">Eliminar</button>
-        </td>
-      </tr>`;
-    });
-
-    document.getElementById('total').innerText = total;
-    document.getElementById('fallas').innerText = fallas;
-    renderChart(activas, fallas, total);
-  });
-
-  // INCIDENCIAS
-  db.collection("incidencias").onSnapshot(snapshot => {
-    let tabla = document.getElementById('tablaInc');
-    tabla.innerHTML='';
-    let totalInc=0;
-
-    snapshot.forEach(doc=>{
-      let item=doc.data();
-      totalInc++;
-      tabla.innerHTML+=`<tr><td>${item.serie}</td><td>${item.descripcion}</td></tr>`;
-    });
-
-    document.getElementById('totalInc').innerText=totalInc;
-  });
-
-  // EQUIPOS
-  db.collection("equipos").onSnapshot(snapshot => {
-    let tabla = document.getElementById('tablaEquipos');
-    tabla.innerHTML='';
-
-    snapshot.forEach(doc=>{
-      let item=doc.data();
-      tabla.innerHTML+=`<tr>
         <td>${item.nombre}</td>
         <td>${item.marca}</td>
         <td>${item.modelo}</td>
+        <td>${item.sucursal}</td>
         <td><button onclick="eliminarEquipo('${doc.id}')">Eliminar</button></td>
       </tr>`;
     });
   });
 }
 
-function guardar(){
-  let sucursal=document.getElementById('sucursal').value;
-  let tipo=document.getElementById('tipo').value;
-  let serie=document.getElementById('serie').value;
-  let estado=document.getElementById('estado').value;
-
-  if(!sucursal||!serie) return alert('Llena los campos');
-
-  if(editId){
-    db.collection("camaras").doc(editId).update({sucursal,tipo,serie,estado});
-    editId=null;
-  }else{
-    db.collection("camaras").add({sucursal,tipo,serie,estado});
-  }
-  limpiar();
+function eliminarEquipo(id){
+  db.collection("equipos").doc(id).delete();
 }
 
-function guardarIncidencia(){
-  let serie=document.getElementById('incSerie').value;
-  let descripcion=document.getElementById('descripcion').value;
-  if(!serie||!descripcion) return alert('Llena los campos');
-  db.collection("incidencias").add({serie,descripcion});
-}
-
-function guardarEquipo(){
-  let nombre=document.getElementById('eqNombre').value;
-  let marca=document.getElementById('eqMarca').value;
-  let modelo=document.getElementById('eqModelo').value;
-  if(!nombre) return alert('Llena los campos');
-  db.collection("equipos").add({nombre,marca,modelo});
-}
-
-function eliminar(id){ db.collection("camaras").doc(id).delete(); }
-function eliminarEquipo(id){ db.collection("equipos").doc(id).delete(); }
-
-function editar(id,sucursal,tipo,serie,estado){
-  document.getElementById('sucursal').value=sucursal;
-  document.getElementById('tipo').value=tipo;
-  document.getElementById('serie').value=serie;
-  document.getElementById('estado').value=estado;
-  editId=id;
-}
-
-function limpiar(){
-  document.getElementById('sucursal').value='';
-  document.getElementById('tipo').value='';
-  document.getElementById('serie').value='';
-}
-
-escuchar();
+cargarSucursales();
+cargarEquipos();
 </script>
 
 </body>
