@@ -14,7 +14,8 @@ body { font-family: Arial; background:#f4f6f9; padding:20px; }
 .container { max-width:900px; margin:auto; }
 .card { background:white; padding:20px; border-radius:10px; margin-bottom:20px; box-shadow:0 2px 5px rgba(0,0,0,0.1);} 
 input, select { padding:10px; margin:5px 0; width:100%; }
-button { padding:10px; background:#007bff; color:white; border:none; border-radius:5px; cursor:pointer; }
+button { padding:8px 10px; margin:2px; background:#007bff; color:white; border:none; border-radius:5px; cursor:pointer; }
+.edit { background:#ffc107; color:black; }
 table { width:100%; border-collapse:collapse; }
 th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 .bad { color:red; font-weight:bold; }
@@ -26,7 +27,7 @@ th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 <div class="container">
 
 <div class="card">
-<h2>Registrar Cámara</h2>
+<h2>Registrar / Editar Cámara</h2>
 <input id="sucursal" placeholder="Sucursal">
 <input id="tipo" placeholder="Tipo de cámara">
 <input id="serie" placeholder="Número de serie">
@@ -35,7 +36,7 @@ th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 <option value="Falla">Falla</option>
 <option value="Reparación">Reparación</option>
 </select>
-<button onclick="agregar()">Agregar</button>
+<button onclick="guardar()">Guardar</button>
 </div>
 
 <div class="card">
@@ -53,7 +54,7 @@ th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 <th>Tipo</th>
 <th>Serie</th>
 <th>Estado</th>
-<th>Acción</th>
+<th>Acciones</th>
 </tr>
 </thead>
 <tbody id="tabla"></tbody>
@@ -63,7 +64,6 @@ th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 </div>
 
 <script>
-// 🔥 CONFIGURACIÓN FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyBVs7GnPPChdilJSk99WG1IPeLJKvEjxVc",
   authDomain: "camaras-control.firebaseapp.com",
@@ -73,11 +73,11 @@ const firebaseConfig = {
   appId: "1:189054050500:web:7cff88d426ea92202fe991"
 };
 
-// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 🔄 Escuchar cambios en tiempo real
+let editId = null;
+
 function escuchar(){
   db.collection("camaras").onSnapshot(snapshot => {
     let tabla = document.getElementById('tabla');
@@ -96,7 +96,10 @@ function escuchar(){
         <td>${item.tipo}</td>
         <td>${item.serie}</td>
         <td class="${item.estado==='Falla'?'bad':'good'}">${item.estado}</td>
-        <td><button onclick="eliminar('${doc.id}')">Eliminar</button></td>
+        <td>
+          <button class="edit" onclick="editar('${doc.id}', '${item.sucursal}', '${item.tipo}', '${item.serie}', '${item.estado}')">Editar</button>
+          <button onclick="eliminar('${doc.id}')">Eliminar</button>
+        </td>
       </tr>`;
     });
 
@@ -105,8 +108,7 @@ function escuchar(){
   });
 }
 
-// ➕ Agregar cámara
-function agregar(){
+function guardar(){
   let sucursal = document.getElementById('sucursal').value;
   let tipo = document.getElementById('tipo').value;
   let serie = document.getElementById('serie').value;
@@ -114,14 +116,37 @@ function agregar(){
 
   if(!sucursal || !serie) return alert('Llena los campos');
 
-  db.collection("camaras").add({
-    sucursal, tipo, serie, estado
-  });
+  if(editId){
+    db.collection("camaras").doc(editId).update({
+      sucursal, tipo, serie, estado
+    });
+    editId = null;
+  } else {
+    db.collection("camaras").add({
+      sucursal, tipo, serie, estado
+    });
+  }
+
+  limpiar();
 }
 
-// ❌ Eliminar cámara
+function editar(id, sucursal, tipo, serie, estado){
+  document.getElementById('sucursal').value = sucursal;
+  document.getElementById('tipo').value = tipo;
+  document.getElementById('serie').value = serie;
+  document.getElementById('estado').value = estado;
+  editId = id;
+}
+
 function eliminar(id){
   db.collection("camaras").doc(id).delete();
+}
+
+function limpiar(){
+  document.getElementById('sucursal').value = '';
+  document.getElementById('tipo').value = '';
+  document.getElementById('serie').value = '';
+  document.getElementById('estado').value = 'Activa';
 }
 
 escuchar();
