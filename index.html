@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema Integral de Cámaras</title>
+<title>Sistema de Cámaras - Reporte Pro</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -17,6 +17,7 @@ input, select, textarea { padding:10px; margin:5px 0; width:100%; }
 button { padding:8px 10px; margin:2px; background:#007bff; color:white; border:none; border-radius:5px; cursor:pointer; }
 table { width:100%; border-collapse:collapse; }
 th, td { padding:10px; border-bottom:1px solid #ddd; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
 </style>
 </head>
 <body>
@@ -30,36 +31,38 @@ th, td { padding:10px; border-bottom:1px solid #ddd; }
 </div>
 
 <div class="card">
-<h2>Equipos</h2>
-<input id="eqNombre" placeholder="Nombre">
-<input id="eqMarca" placeholder="Marca">
-<input id="eqModelo" placeholder="Modelo">
-<button onclick="addEquipo()">Guardar</button>
-<table><tbody id="tablaEquipos"></tbody></table>
+<h2>Filtro por fechas</h2>
+<input type="date" id="fechaInicio">
+<input type="date" id="fechaFin">
+<button onclick="cargarTodo()">Aplicar filtro</button>
+</div>
+
+<div class="grid">
+<div class="card">
+<h3>Resumen</h3>
+<p>Total cámaras: <span id="rTotal"></span></p>
+<p>Activas: <span id="rActivas"></span></p>
+<p>Fallas: <span id="rFallas"></span></p>
+<p>Incidencias: <span id="rInc"></span></p>
 </div>
 
 <div class="card">
-<h2>Cámaras</h2>
-<select id="equipoSelect"></select>
-<input id="serie" placeholder="Serie">
-<select id="estado">
-<option>Activa</option>
-<option>Falla</option>
-</select>
-<button onclick="addCamara()">Guardar</button>
-<table><tbody id="tablaCamaras"></tbody></table>
+<h3>Incidencias por técnico</h3>
+<ul id="tecnicos"></ul>
+</div>
+</div>
+
+<div class="card">
+<canvas id="grafica"></canvas>
 </div>
 
 <div class="card">
 <h2>Incidencias</h2>
 <select id="camaraSelect"></select>
-<textarea id="desc"></textarea>
+<textarea id="desc" placeholder="Descripción"></textarea>
+<input id="tecnico" placeholder="Técnico">
 <button onclick="addInc()">Guardar</button>
 <table><tbody id="tablaInc"></tbody></table>
-</div>
-
-<div class="card">
-<canvas id="grafica"></canvas>
 </div>
 
 </div>
@@ -74,36 +77,14 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let chart;
 
-function addSucursal(){
- let n=document.getElementById('nuevaSucursal').value;
- db.collection('sucursales').add({nombre:n});
-}
+function addSucursal(){ db.collection('sucursales').add({nombre:nuevaSucursal.value}); }
 
-function addEquipo(){
- let s=document.getElementById('sucursal').value;
- db.collection('equipos').add({
-  nombre:eqNombre.value,
-  marca:eqMarca.value,
-  modelo:eqModelo.value,
-  sucursal:s
- });
-}
-
-function addCamara(){
- db.collection('camaras').add({
-  equipo:equipoSelect.value,
-  serie:serie.value,
-  estado:estado.value,
-  sucursal:sucursal.value
- });
-}
-
-function addInc(){
- db.collection('incidencias').add({
-  camara:camaraSelect.value,
-  descripcion:desc.value
- });
-}
+function addInc(){ db.collection('incidencias').add({
+ camara:camaraSelect.value,
+ descripcion:desc.value,
+ tecnico:tecnico.value,
+ fecha:new Date().toISOString()
+}); }
 
 function cargarSucursales(){
  db.collection('sucursales').onSnapshot(s=>{
@@ -114,39 +95,51 @@ function cargarSucursales(){
 
 function cargarTodo(){
  let s=sucursal.value;
-
- db.collection('equipos').where('sucursal','==',s).onSnapshot(sn=>{
-  tablaEquipos.innerHTML='';
-  equipoSelect.innerHTML='';
-  sn.forEach(d=>{
-    let e=d.data();
-    tablaEquipos.innerHTML+=`<tr><td>${e.nombre}</td></tr>`;
-    equipoSelect.innerHTML+=`<option>${e.nombre}</option>`;
-  });
- });
+ let fi=fechaInicio.value;
+ let ff=fechaFin.value;
+ let total=0,act=0,fall=0,inc=0;
+ let conteoTec={};
 
  db.collection('camaras').where('sucursal','==',s).onSnapshot(sn=>{
-  tablaCamaras.innerHTML='';
-  camaraSelect.innerHTML='';
-  let a=0,f=0;
-
+  total=0;act=0;fall=0;
   sn.forEach(d=>{
     let c=d.data();
-    tablaCamaras.innerHTML+=`<tr><td>${c.serie}</td><td>${c.estado}</td></tr>`;
+    total++;
+    if(c.estado==='Activa') act++; else fall++;
     camaraSelect.innerHTML+=`<option>${c.serie}</option>`;
-    if(c.estado==='Activa')a++; else f++;
   });
 
+  rTotal.innerText=total;
+  rActivas.innerText=act;
+  rFallas.innerText=fall;
+
   if(chart) chart.destroy();
-  chart=new Chart(grafica,{type:'pie',data:{labels:['Activas','Fallas'],datasets:[{data:[a,f]}]}});
+  chart=new Chart(grafica,{type:'pie',data:{labels:['Activas','Fallas'],datasets:[{data:[act,fall]}]}});
  });
 
  db.collection('incidencias').onSnapshot(sn=>{
   tablaInc.innerHTML='';
+  tecnicos.innerHTML='';
+  inc=0;
+
   sn.forEach(d=>{
     let i=d.data();
-    tablaInc.innerHTML+=`<tr><td>${i.camara}</td><td>${i.descripcion}</td></tr>`;
+    let fecha=i.fecha?.split('T')[0];
+
+    if(fi && fecha < fi) return;
+    if(ff && fecha > ff) return;
+
+    inc++;
+    tablaInc.innerHTML+=`<tr><td>${i.camara}</td><td>${i.descripcion}</td><td>${i.tecnico}</td><td>${fecha}</td></tr>`;
+
+    conteoTec[i.tecnico]=(conteoTec[i.tecnico]||0)+1;
   });
+
+  rInc.innerText=inc;
+
+  for(let t in conteoTec){
+    tecnicos.innerHTML+=`<li>${t}: ${conteoTec[t]} incidencias</li>`;
+  }
  });
 }
 
