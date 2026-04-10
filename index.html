@@ -3,17 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Control de Cámaras</title>
+<title>Control de Cámaras Pro</title>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <style>
 body { font-family: Arial; background:#f4f6f9; padding:20px; }
-.container { max-width:900px; margin:auto; }
+.container { max-width:1000px; margin:auto; }
 .card { background:white; padding:20px; border-radius:10px; margin-bottom:20px; box-shadow:0 2px 5px rgba(0,0,0,0.1);} 
-input, select { padding:10px; margin:5px 0; width:100%; }
+input, select, textarea { padding:10px; margin:5px 0; width:100%; }
 button { padding:8px 10px; margin:2px; background:#007bff; color:white; border:none; border-radius:5px; cursor:pointer; }
 .edit { background:#ffc107; color:black; }
 table { width:100%; border-collapse:collapse; }
@@ -40,9 +39,17 @@ th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 </div>
 
 <div class="card">
+<h2>Registrar Incidencia</h2>
+<input id="incSerie" placeholder="Serie de la cámara">
+<textarea id="descripcion" placeholder="Descripción de la falla"></textarea>
+<button onclick="guardarIncidencia()">Guardar incidencia</button>
+</div>
+
+<div class="card">
 <h2>Resumen</h2>
 <p>Total equipos: <span id="total"></span></p>
 <p>Con fallas: <span id="fallas"></span></p>
+<p>Total incidencias: <span id="totalInc"></span></p>
 </div>
 
 <div class="card">
@@ -58,6 +65,19 @@ th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 </tr>
 </thead>
 <tbody id="tabla"></tbody>
+</table>
+</div>
+
+<div class="card">
+<h2>Incidencias</h2>
+<table>
+<thead>
+<tr>
+<th>Serie</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody id="tablaInc"></tbody>
 </table>
 </div>
 
@@ -106,6 +126,25 @@ function escuchar(){
     document.getElementById('total').innerText = total;
     document.getElementById('fallas').innerText = fallas;
   });
+
+  db.collection("incidencias").onSnapshot(snapshot => {
+    let tabla = document.getElementById('tablaInc');
+    tabla.innerHTML = '';
+    let totalInc = 0;
+
+    snapshot.forEach(doc => {
+      let item = doc.data();
+      totalInc++;
+
+      tabla.innerHTML += `
+      <tr>
+        <td>${item.serie}</td>
+        <td>${item.descripcion}</td>
+      </tr>`;
+    });
+
+    document.getElementById('totalInc').innerText = totalInc;
+  });
 }
 
 function guardar(){
@@ -128,6 +167,18 @@ function guardar(){
   }
 
   limpiar();
+}
+
+function guardarIncidencia(){
+  let serie = document.getElementById('incSerie').value;
+  let descripcion = document.getElementById('descripcion').value;
+
+  if(!serie || !descripcion) return alert('Llena los campos');
+
+  db.collection("incidencias").add({ serie, descripcion });
+
+  document.getElementById('incSerie').value = '';
+  document.getElementById('descripcion').value = '';
 }
 
 function editar(id, sucursal, tipo, serie, estado){
