@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Cámaras</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <style>
 body { font-family: Arial; background:#f4f6f9; padding:20px; }
 .container { max-width:900px; margin:auto; }
@@ -16,6 +21,7 @@ th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 .good { color:green; font-weight:bold; }
 </style>
 </head>
+
 <body>
 <div class="container">
 
@@ -57,52 +63,68 @@ th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
 </div>
 
 <script>
-let datos = JSON.parse(localStorage.getItem('camaras')) || [];
+// 🔥 CONFIGURACIÓN FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyBVs7GnPPChdilJSk99WG1IPeLJKvEjxVc",
+  authDomain: "camaras-control.firebaseapp.com",
+  projectId: "camaras-control",
+  storageBucket: "camaras-control.firebasestorage.app",
+  messagingSenderId: "189054050500",
+  appId: "1:189054050500:web:7cff88d426ea92202fe991"
+};
 
-function guardar() {
-localStorage.setItem('camaras', JSON.stringify(datos));
-render();
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// 🔄 Escuchar cambios en tiempo real
+function escuchar(){
+  db.collection("camaras").onSnapshot(snapshot => {
+    let tabla = document.getElementById('tabla');
+    tabla.innerHTML = '';
+    let total = 0;
+    let fallas = 0;
+
+    snapshot.forEach(doc => {
+      let item = doc.data();
+      total++;
+      if(item.estado === 'Falla') fallas++;
+
+      tabla.innerHTML += `
+      <tr>
+        <td>${item.sucursal}</td>
+        <td>${item.tipo}</td>
+        <td>${item.serie}</td>
+        <td class="${item.estado==='Falla'?'bad':'good'}">${item.estado}</td>
+        <td><button onclick="eliminar('${doc.id}')">Eliminar</button></td>
+      </tr>`;
+    });
+
+    document.getElementById('total').innerText = total;
+    document.getElementById('fallas').innerText = fallas;
+  });
 }
 
-function agregar() {
-let sucursal = document.getElementById('sucursal').value;
-let tipo = document.getElementById('tipo').value;
-let serie = document.getElementById('serie').value;
-let estado = document.getElementById('estado').value;
+// ➕ Agregar cámara
+function agregar(){
+  let sucursal = document.getElementById('sucursal').value;
+  let tipo = document.getElementById('tipo').value;
+  let serie = document.getElementById('serie').value;
+  let estado = document.getElementById('estado').value;
 
-if(!sucursal || !serie) return alert('Llena los campos');
+  if(!sucursal || !serie) return alert('Llena los campos');
 
- datos.push({sucursal, tipo, serie, estado});
- guardar();
+  db.collection("camaras").add({
+    sucursal, tipo, serie, estado
+  });
 }
 
-function eliminar(index){
- datos.splice(index,1);
- guardar();
+// ❌ Eliminar cámara
+function eliminar(id){
+  db.collection("camaras").doc(id).delete();
 }
 
-function render(){
-let tabla = document.getElementById('tabla');
-tabla.innerHTML = '';
-let fallas = 0;
-
- datos.forEach((item,i)=>{
- if(item.estado==='Falla') fallas++;
- tabla.innerHTML += `
- <tr>
- <td>${item.sucursal}</td>
- <td>${item.tipo}</td>
- <td>${item.serie}</td>
- <td class="${item.estado==='Falla'?'bad':'good'}">${item.estado}</td>
- <td><button onclick="eliminar(${i})">Eliminar</button></td>
- </tr>`;
- });
-
- document.getElementById('total').innerText = datos.length;
- document.getElementById('fallas').innerText = fallas;
-}
-
-render();
+escuchar();
 </script>
 
 </body>
