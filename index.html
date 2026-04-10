@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Cámaras</title>
+<style>
+body { font-family: Arial; background:#f4f6f9; padding:20px; }
+.container { max-width:900px; margin:auto; }
+.card { background:white; padding:20px; border-radius:10px; margin-bottom:20px; box-shadow:0 2px 5px rgba(0,0,0,0.1);} 
+input, select { padding:10px; margin:5px 0; width:100%; }
+button { padding:10px; background:#007bff; color:white; border:none; border-radius:5px; cursor:pointer; }
+table { width:100%; border-collapse:collapse; }
+th, td { padding:10px; border-bottom:1px solid #ddd; text-align:left; }
+.bad { color:red; font-weight:bold; }
+.good { color:green; font-weight:bold; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="card">
+<h2>Registrar Cámara</h2>
+<input id="sucursal" placeholder="Sucursal">
+<input id="tipo" placeholder="Tipo de cámara">
+<input id="serie" placeholder="Número de serie">
+<select id="estado">
+<option value="Activa">Activa</option>
+<option value="Falla">Falla</option>
+<option value="Reparación">Reparación</option>
+</select>
+<button onclick="agregar()">Agregar</button>
+</div>
+
+<div class="card">
+<h2>Resumen</h2>
+<p>Total equipos: <span id="total"></span></p>
+<p>Con fallas: <span id="fallas"></span></p>
+</div>
+
+<div class="card">
+<h2>Lista de cámaras</h2>
+<table>
+<thead>
+<tr>
+<th>Sucursal</th>
+<th>Tipo</th>
+<th>Serie</th>
+<th>Estado</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+let datos = JSON.parse(localStorage.getItem('camaras')) || [];
+
+function guardar() {
+localStorage.setItem('camaras', JSON.stringify(datos));
+render();
+}
+
+function agregar() {
+let sucursal = document.getElementById('sucursal').value;
+let tipo = document.getElementById('tipo').value;
+let serie = document.getElementById('serie').value;
+let estado = document.getElementById('estado').value;
+
+if(!sucursal || !serie) return alert('Llena los campos');
+
+ datos.push({sucursal, tipo, serie, estado});
+ guardar();
+}
+
+function eliminar(index){
+ datos.splice(index,1);
+ guardar();
+}
+
+function render(){
+let tabla = document.getElementById('tabla');
+tabla.innerHTML = '';
+let fallas = 0;
+
+ datos.forEach((item,i)=>{
+ if(item.estado==='Falla') fallas++;
+ tabla.innerHTML += `
+ <tr>
+ <td>${item.sucursal}</td>
+ <td>${item.tipo}</td>
+ <td>${item.serie}</td>
+ <td class="${item.estado==='Falla'?'bad':'good'}">${item.estado}</td>
+ <td><button onclick="eliminar(${i})">Eliminar</button></td>
+ </tr>`;
+ });
+
+ document.getElementById('total').innerText = datos.length;
+ document.getElementById('fallas').innerText = fallas;
+}
+
+render();
+</script>
+
+</body>
+</html>
