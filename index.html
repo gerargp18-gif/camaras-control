@@ -51,7 +51,14 @@ th, td { padding:8px; border-bottom:1px solid #eee; }
 <div id="base" class="card hidden">
 <h3>Base de cámaras</h3>
 
-<input id="sucursal" placeholder="Sucursal">
+<select id="sucursal">
+<option value="">Selecciona sucursal</option>
+<option>Centro</option>
+<option>Norte</option>
+<option>Sur</option>
+<option>Este</option>
+<option>Oeste</option>
+</select>
 
 <div class="grid">
 <button onclick="filtroEstado=''">Todas</button>
@@ -117,7 +124,7 @@ function cargar(){
 
   sn.forEach(d=>{
    let c=d.data();
-   if(suc && !c.sucursal?.toLowerCase().includes(suc)) return;
+   if(suc && c.sucursal?.toLow
    if(filtroEstado && c.estado!=filtroEstado) return;
 
    t++; if(c.estado=='Activa')a++; else f++;
