@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema Cámaras PRO++</title>
+<title>Sistema Cámaras PRO+++</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -21,30 +21,55 @@ button { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; margi
 .primary { background:#2563eb; color:white; }
 .delete { background:#dc2626; color:white; }
 .hidden { display:none; }
-.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:10px; }
-.bad { color:red; font-weight:bold; }
-.good { color:green; font-weight:bold; }
 table { width:100%; border-collapse:collapse; }
 th, td { padding:8px; border-bottom:1px solid #eee; }
+.smallChart { max-width:300px; margin:auto; }
 </style>
 </head>
 <body>
 
 <div class="sidebar">
-<button onclick="mostrar('dashboard')">Dashboard</button>
+<button onclick="mostrar('dashboard')">Dashboard General</button>
+<button onclick="mostrar('dashboardSucursal')">Dashboard por Sucursal</button>
 <button onclick="mostrar('base')">Base cámaras</button>
 <button onclick="mostrar('incidencias')">Incidencias</button>
 </div>
 
 <div class="main">
 
-<!-- DASHBOARD -->
+<!-- DASHBOARD GENERAL -->
 <div id="dashboard" class="card">
-<h3>Resumen</h3>
+<h3>Resumen general</h3>
 <p>Total: <span id="total"></span></p>
 <p>Fallas: <span id="fall"></span></p>
 <p>Estado: <span id="alerta"></span></p>
-<canvas id="grafica"></canvas>
+<div class="smallChart"><canvas id="grafica"></canvas></div>
+</div>
+
+<!-- DASHBOARD SUCURSAL -->
+<div id="dashboardSucursal" class="card hidden">
+<h3>Dashboard por sucursal</h3>
+<select id="filtroSucursal" onchange="cargar()">
+<option value="">Selecciona sucursal</option>
+<option>Corporativo</option>
+<option>Cedis</option>
+<option>Hidalgo</option>
+<option>Construcasa</option>
+<option>Ferrocarril</option>
+<option>Simbolos</option>
+<option>Santa Rosa</option>
+<option>Atzompa</option>
+<option>Viguera</option>
+<option>Reforma</option>
+<option>Tehuantepec</option>
+<option>Puerto Escondido</option>
+</select>
+
+<p>Total: <span id="sTotal"></span></p>
+<p>Fallas: <span id="sFall"></span></p>
+<p>Estado: <span id="sAlerta"></span></p>
+
+<div class="smallChart"><canvas id="graficaSucursal"></canvas></div>
 </div>
 
 <!-- BASE -->
@@ -66,14 +91,6 @@ th, td { padding:8px; border-bottom:1px solid #eee; }
 <option>Tehuantepec</option>
 <option>Puerto Escondido</option>
 </select>
-
-<div class="grid">
-<button onclick="filtroEstado=''">Todas</button>
-<button onclick="filtroEstado='Activa'">Activas</button>
-<button onclick="filtroEstado='Falla'">Fallas</button>
-</div>
-
-<p>Total: <span id="bTotal"></span> | Activas: <span id="bAct"></span> | Fallas: <span id="bFall"></span></p>
 
 <input id="nombre" placeholder="Nombre de cámara">
 <input id="marca" placeholder="Marca">
@@ -103,62 +120,72 @@ th, td { padding:8px; border-bottom:1px solid #eee; }
 const firebaseConfig={apiKey:"AIzaSyBVs7GnPPChdilJSk99WG1IPeLJKvEjxVc",authDomain:"camaras-control.firebaseapp.com",projectId:"camaras-control"};
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
-let chart,editId=null,filtroEstado='';
+let chart,chartSucursal,editId=null;
 
-function mostrar(s){['dashboard','base','incidencias'].forEach(x=>document.getElementById(x).classList.add('hidden'));document.getElementById(s).classList.remove('hidden');}
+function mostrar(s){['dashboard','dashboardSucursal','base','incidencias'].forEach(x=>document.getElementById(x).classList.add('hidden'));document.getElementById(s).classList.remove('hidden');}
 
 function guardarCamara(){
  let n=nombre.value;
  let m=marca.value;
  let t=tipo.value;
- if(!n || !m || !t) return alert('Completa todos los campos');
+ if(!n||!m||!t) return alert('Completa campos');
 
  if(editId){ db.collection('camaras').doc(editId).update({nombre:n,marca:m,tipo:t,estado:estado.value,sucursal:sucursal.value}); editId=null; }
- else{ db.collection('camaras').add({nombre:n,marca:m,tipo:t,estado:estado.value,sucursal:sucursal.value,fecha:new Date().toISOString()}); }
+ else{ db.collection('camaras').add({nombre:n,marca:m,tipo:t,estado:estado.value,sucursal:sucursal.value}); }
 }
 
-function editar(id,n,m,t,e,su){ nombre.value=n; marca.value=m; tipo.value=t; estado.value=e; sucursal.value=su||''; editId=id; mostrar('base'); }
+function editar(id,n,m,t,e,su){ nombre.value=n; marca.value=m; tipo.value=t; estado.value=e; sucursal.value=su; editId=id; mostrar('base'); }
 function eliminar(id){ if(confirm('¿Eliminar?')) db.collection('camaras').doc(id).delete(); }
 
 function addInc(){ db.collection('incidencias').add({camara:camaraSelect.value,descripcion:desc.value,tecnico:tecnico.value}); }
 
 function cargar(){
- let suc=sucursal.value.toLowerCase();
- let t=0,a=0,f=0;
+ let totalC=0,fallas=0;
+ let sucFiltro=filtroSucursal.value;
+ let sTotalC=0,sFallas=0;
 
  db.collection('camaras').onSnapshot(sn=>{
   tablaCamaras.innerHTML=''; camaraSelect.innerHTML='';
 
   sn.forEach(d=>{
    let c=d.data();
-   if(suc && c.sucursal?.toLowerCase()!==suc) return;
-   if(filtroEstado && c.estado!=filtroEstado) return;
+   totalC++;
+   if(c.estado==='Falla') fallas++;
 
-   t++; if(c.estado=='Activa')a++; else f++;
+   if(sucFiltro && c.sucursal===sucFiltro){
+     sTotalC++;
+     if(c.estado==='Falla') sFallas++;
+   }
 
    tablaCamaras.innerHTML+=`<tr>
    <td>${c.nombre}</td>
    <td>${c.marca}</td>
    <td>${c.tipo}</td>
-   <td>${c.sucursal||''}</td>
-   <td class="${c.estado=='Falla'?'bad':'good'}">${c.estado}</td>
+   <td>${c.sucursal}</td>
+   <td>${c.estado}</td>
    <td>
-   <button onclick="editar('${d.id}','${c.nombre}','${c.marca}','${c.tipo}','${c.estado}','${c.sucursal||''}')">✏️</button>
+   <button onclick="editar('${d.id}','${c.nombre}','${c.marca}','${c.tipo}','${c.estado}','${c.sucursal}')">✏️</button>
    <button class="delete" onclick="eliminar('${d.id}')">🗑️</button>
    </td></tr>`;
 
    camaraSelect.innerHTML+=`<option>${c.nombre}</option>`;
   });
 
-  bTotal.innerText=t; bAct.innerText=a; bFall.innerText=f;
-
-  total.innerText=t; fall.innerText=f;
-
-  let p=t?f/t*100:0;
-  alerta.innerText=p>50?'🔥 Crítico':p>20?'⚠️ Medio':'✅ OK';
+  total.innerText=totalC;
+  fall.innerText=fallas;
 
   if(chart)chart.destroy();
-  chart=new Chart(grafica,{type:'pie',data:{labels:['Total','Fallas'],datasets:[{data:[t,f]}]}});
+  chart=new Chart(grafica,{type:'pie',data:{labels:['Total','Fallas'],datasets:[{data:[totalC,fallas]}]}});
+
+  // DASHBOARD SUCURSAL
+  sTotal.innerText=sTotalC;
+  sFall.innerText=sFallas;
+
+  let p=sTotalC? (sFallas/sTotalC)*100 : 0;
+  sAlerta.innerText=p>50?'🔥 Crítico':p>20?'⚠️ Medio':'✅ OK';
+
+  if(chartSucursal)chartSucursal.destroy();
+  chartSucursal=new Chart(graficaSucursal,{type:'pie',data:{labels:['Total','Fallas'],datasets:[{data:[sTotalC,sFallas]}]}});
  });
 
  db.collection('incidencias').onSnapshot(sn=>{
