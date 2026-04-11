@@ -3,231 +3,166 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema Cámaras PRO</title>
+<title>Sistema Cámaras PRO+</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body { margin:0; font-family: 'Segoe UI', Arial; background:#eef2f7; }
-
-.header {
-  background:#1e293b;
-  color:white;
-  padding:15px 20px;
-  font-size:18px;
-  font-weight:bold;
-}
-
+body { margin:0; font-family: 'Segoe UI'; background:#eef2f7; }
+.header { background:#1e293b; color:white; padding:15px; font-weight:bold; }
 .container { padding:20px; max-width:1200px; margin:auto; }
-
-.card {
-  background:white;
-  border-radius:16px;
-  padding:20px;
-  margin-bottom:20px;
-  box-shadow:0 10px 25px rgba(0,0,0,0.08);
-}
-
-h2 { margin-top:0; }
-
-input, select, textarea {
-  width:100%;
-  padding:10px;
-  margin-top:8px;
-  border-radius:8px;
-  border:1px solid #d1d5db;
-}
-
-.btn {
-  padding:10px 15px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:600;
-}
-
+.card { background:white; border-radius:12px; padding:15px; margin-bottom:15px; box-shadow:0 5px 15px rgba(0,0,0,0.08);} 
+input, select, textarea { width:100%; padding:8px; margin-top:5px; border-radius:6px; border:1px solid #ccc; }
+button { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; margin-top:5px; }
 .primary { background:#2563eb; color:white; }
 .success { background:#16a34a; color:white; }
 .warning { background:#f59e0b; color:white; }
-
-.btn-group { display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
-
-.grid {
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
-  gap:20px;
-}
-
-.stat {
-  font-size:20px;
-  font-weight:bold;
-}
-
-.stat small {
-  display:block;
-  color:#6b7280;
-  font-weight:normal;
-}
-
-table { width:100%; border-collapse:collapse; margin-top:10px; }
-th, td { padding:10px; border-bottom:1px solid #eee; }
-
-.bad { color:#dc2626; font-weight:bold; }
-.good { color:#16a34a; font-weight:bold; }
+.danger { background:#dc2626; color:white; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:10px; }
+table { width:100%; margin-top:10px; border-collapse:collapse; }
+th, td { padding:8px; border-bottom:1px solid #eee; }
+.smallChart { max-width:300px; margin:auto; }
 </style>
 </head>
 <body>
-
-<div class="header">📊 Sistema de Cámaras</div>
-
+<div class="header">Sistema Cámaras PRO+</div>
 <div class="container">
 
 <div class="card">
-<h2>Sucursal</h2>
-<input id="nuevaSucursal" placeholder="Nueva sucursal">
-<div class="btn-group">
-<button class="btn primary" onclick="addSucursal()">Agregar</button>
-</div>
-<select id="sucursal" onchange="cargarTodo()"></select>
-</div>
-
-<div class="grid">
-
-<div class="card">
-<h2>Equipos</h2>
-<input id="eqNombre" placeholder="Nombre">
-<input id="eqMarca" placeholder="Marca">
-<input id="eqModelo" placeholder="Modelo">
-<div class="btn-group">
-<button class="btn success" onclick="addEquipo()">Guardar</button>
-</div>
-<table><tbody id="tablaEquipos"></tbody></table>
-</div>
-
-<div class="card">
-<h2>Cámaras</h2>
-<select id="equipoSelect"></select>
-<input id="serie" placeholder="Serie">
-<select id="estado">
+<input id="buscador" placeholder="Buscar por serie o sucursal" onkeyup="cargarTodo()">
+<select id="filtroEstado" onchange="cargarTodo()">
+<option value="">Todos</option>
 <option>Activa</option>
 <option>Falla</option>
 </select>
-<div class="btn-group">
-<button class="btn success" onclick="addCamara()">Guardar</button>
-</div>
-<table><tbody id="tablaCamaras"></tbody></table>
-</div>
-
+<input type="date" id="fi">
+<input type="date" id="ff">
+<button class="primary" onclick="exportar()">Exportar Excel</button>
 </div>
 
 <div class="card">
-<h2>Incidencias</h2>
-<select id="camaraSelect"></select>
-<textarea id="desc" placeholder="Descripción"></textarea>
-<input id="tecnico" placeholder="Técnico">
-<div class="btn-group">
-<button class="btn warning" onclick="addInc()">Registrar</button>
+<h3>Cámaras</h3>
+<input id="serie">
+<select id="estado"><option>Activa</option><option>Falla</option></select>
+<button class="success" onclick="guardarCamara()">Guardar</button>
+<table><tbody id="tablaCamaras"></tbody></table>
 </div>
+
+<div class="card">
+<h3>Incidencias</h3>
+<select id="camaraSelect"></select>
+<textarea id="desc"></textarea>
+<input id="tecnico">
+<button class="warning" onclick="addInc()">Guardar</button>
 <table><tbody id="tablaInc"></tbody></table>
 </div>
 
 <div class="grid">
-<div class="card">
-<div class="stat">📦 <span id="rTotal"></span><small>Total cámaras</small></div>
+<div class="card">Total: <span id="total"></span></div>
+<div class="card">Activas: <span id="act"></span></div>
+<div class="card">Fallas: <span id="fall"></span></div>
+<div class="card">Incidencias: <span id="inc"></span></div>
 </div>
+
+<div class="card smallChart"><canvas id="grafica"></canvas></div>
+
 <div class="card">
-<div class="stat">🟢 <span id="rActivas"></span><small>Activas</small></div>
-</div>
-<div class="card">
-<div class="stat">🔴 <span id="rFallas"></span><small>Fallas</small></div>
-</div>
-<div class="card">
-<div class="stat">⚠️ <span id="rInc"></span><small>Incidencias</small></div>
-</div>
+<h3>Gráfica por técnico</h3>
+<canvas id="graficaTec"></canvas>
 </div>
 
 <div class="card">
-<canvas id="grafica"></canvas>
+<h3>Historial por cámara</h3>
+<select id="histCam" onchange="historial()"></select>
+<ul id="historialLista"></ul>
 </div>
 
 </div>
 
 <script>
-const firebaseConfig = {
- apiKey: "AIzaSyBVs7GnPPChdilJSk99WG1IPeLJKvEjxVc",
- authDomain: "camaras-control.firebaseapp.com",
- projectId: "camaras-control",
-};
-
+const firebaseConfig={apiKey:"AIzaSyBVs7GnPPChdilJSk99WG1IPeLJKvEjxVc",authDomain:"camaras-control.firebaseapp.com",projectId:"camaras-control"};
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-let chart;
+const db=firebase.firestore();
+let chart,chartTec,editId=null;
 
-function addSucursal(){ db.collection('sucursales').add({nombre:nuevaSucursal.value}); }
+function guardarCamara(){
+ let s=serie.value;
+ if(editId){ db.collection('camaras').doc(editId).update({serie:s,estado:estado.value}); editId=null; }
+ else{ db.collection('camaras').add({serie:s,estado:estado.value}); }
+}
 
-function addEquipo(){ db.collection('equipos').add({nombre:eqNombre.value,marca:eqMarca.value,modelo:eqModelo.value,sucursal:sucursal.value}); }
+function eliminar(id){ if(confirm('¿Eliminar?')) db.collection('camaras').doc(id).delete(); }
 
-function addCamara(){ db.collection('camaras').add({equipo:equipoSelect.value,serie:serie.value,estado:estado.value,sucursal:sucursal.value}); }
+function editar(id,s,e){ serie.value=s; estado.value=e; editId=id; }
 
 function addInc(){ db.collection('incidencias').add({camara:camaraSelect.value,descripcion:desc.value,tecnico:tecnico.value,fecha:new Date().toISOString()}); }
 
-function cargarSucursales(){
- db.collection('sucursales').onSnapshot(s=>{
-  sucursal.innerHTML='';
-  s.forEach(d=>sucursal.innerHTML+=`<option>${d.data().nombre}</option>`);
- });
-}
-
 function cargarTodo(){
- let s=sucursal.value;
- let total=0,act=0,fall=0,inc=0;
+ let b=buscador.value.toLowerCase();
+ let f=filtroEstado.value;
+ let fiVal=fi.value, ffVal=ff.value;
+ let t=0,a=0,fa=0,i=0;
+ let tecCount={};
 
- db.collection('equipos').where('sucursal','==',s).onSnapshot(sn=>{
-  tablaEquipos.innerHTML='';
-  equipoSelect.innerHTML='';
+ db.collection('camaras').onSnapshot(sn=>{
+  tablaCamaras.innerHTML=''; camaraSelect.innerHTML=''; histCam.innerHTML='';
   sn.forEach(d=>{
-    let e=d.data();
-    tablaEquipos.innerHTML+=`<tr><td>${e.nombre}</td></tr>`;
-    equipoSelect.innerHTML+=`<option>${e.nombre}</option>`;
+   let c=d.data();
+   if(b && !c.serie.toLowerCase().includes(b)) return;
+   if(f && c.estado!=f) return;
+   t++; if(c.estado=='Activa')a++; else fa++;
+   tablaCamaras.innerHTML+=`<tr><td>${c.serie}</td><td>${c.estado}</td><td>
+   <button onclick="editar('${d.id}','${c.serie}','${c.estado}')">✏️</button>
+   <button onclick="eliminar('${d.id}')">🗑️</button></td></tr>`;
+   camaraSelect.innerHTML+=`<option>${c.serie}</option>`;
+   histCam.innerHTML+=`<option>${c.serie}</option>`;
   });
- });
-
- db.collection('camaras').where('sucursal','==',s).onSnapshot(sn=>{
-  tablaCamaras.innerHTML='';
-  camaraSelect.innerHTML='';
-  total=0;act=0;fall=0;
-
-  sn.forEach(d=>{
-    let c=d.data();
-    total++;
-    if(c.estado==='Activa') act++; else fall++;
-    tablaCamaras.innerHTML+=`<tr><td>${c.serie}</td><td class="${c.estado==='Falla'?'bad':'good'}">${c.estado}</td></tr>`;
-    camaraSelect.innerHTML+=`<option>${c.serie}</option>`;
-  });
-
-  rTotal.innerText=total;
-  rActivas.innerText=act;
-  rFallas.innerText=fall;
-
-  if(chart) chart.destroy();
-  chart=new Chart(grafica,{type:'pie',data:{labels:['Activas','Fallas'],datasets:[{data:[act,fall]}]}});
+  total.innerText=t; act.innerText=a; fall.innerText=fa;
+  if(chart)chart.destroy();
+  chart=new Chart(grafica,{type:'pie',data:{labels:['Activas','Fallas'],datasets:[{data:[a,fa]}]}});
  });
 
  db.collection('incidencias').onSnapshot(sn=>{
-  tablaInc.innerHTML='';
-  inc=0;
+  tablaInc.innerHTML=''; i=0;
   sn.forEach(d=>{
-    let i=d.data();
-    inc++;
-    tablaInc.innerHTML+=`<tr><td>${i.camara}</td><td>${i.descripcion}</td><td>${i.tecnico}</td></tr>`;
+   let x=d.data(); let fecha=x.fecha?.split('T')[0];
+   if(fiVal && fecha<fiVal) return;
+   if(ffVal && fecha>ffVal) return;
+   i++;
+   tablaInc.innerHTML+=`<tr><td>${x.camara}</td><td>${x.descripcion}</td><td>${x.tecnico}</td></tr>`;
+   tecCount[x.tecnico]=(tecCount[x.tecnico]||0)+1;
   });
-  rInc.innerText=inc;
+  inc.innerText=i;
+  if(chartTec)chartTec.destroy();
+  chartTec=new Chart(graficaTec,{type:'bar',data:{labels:Object.keys(tecCount),datasets:[{data:Object.values(tecCount)}]}});
  });
 }
 
-cargarSucursales();
+function historial(){
+ let cam=histCam.value;
+ historialLista.innerHTML='';
+ db.collection('incidencias').where('camara','==',cam).onSnapshot(sn=>{
+  sn.forEach(d=>{
+   let i=d.data();
+   historialLista.innerHTML+=`<li>${i.descripcion} - ${i.tecnico}</li>`;
+  });
+ });
+}
+
+function exportar(){
+ let csv='Camara,Descripcion,Tecnico\n';
+ document.querySelectorAll('#tablaInc tr').forEach(r=>{
+  let c=r.children;
+  csv+=`${c[0].innerText},${c[1].innerText},${c[2].innerText}\n`;
+ });
+ let blob=new Blob([csv]);
+ let a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+ a.download='reporte.csv'; a.click();
+}
+
+cargarTodo();
 </script>
 </body>
 </html>
