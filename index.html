@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema Cámaras</title>
+<title>Sistema Cámaras PRO++</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -32,7 +32,7 @@ th, td { padding:8px; border-bottom:1px solid #eee; }
 
 <div class="sidebar">
 <button onclick="mostrar('dashboard')">Dashboard</button>
-<button onclick="mostrar('base')">Base de cámaras</button>
+<button onclick="mostrar('base')">Base cámaras</button>
 <button onclick="mostrar('incidencias')">Incidencias</button>
 </div>
 
@@ -51,7 +51,7 @@ th, td { padding:8px; border-bottom:1px solid #eee; }
 <div id="base" class="card hidden">
 <h3>Base de cámaras</h3>
 
-<input id="buscar" placeholder="Buscar serie" onkeyup="cargar()">
+<input id="sucursal" placeholder="Sucursal">
 
 <div class="grid">
 <button onclick="filtroEstado=''">Todas</button>
@@ -61,12 +61,14 @@ th, td { padding:8px; border-bottom:1px solid #eee; }
 
 <p>Total: <span id="bTotal"></span> | Activas: <span id="bAct"></span> | Fallas: <span id="bFall"></span></p>
 
-<input id="serie" placeholder="Serie">
+<input id="nombre" placeholder="Nombre de cámara">
+<input id="marca" placeholder="Marca">
+<input id="tipo" placeholder="Tipo">
 <select id="estado"><option>Activa</option><option>Falla</option></select>
 <button class="primary" onclick="guardarCamara()">Guardar</button>
 
 <table>
-<thead><tr><th>Serie</th><th>Estado</th><th>Acciones</th></tr></thead>
+<thead><tr><th>Nombre</th><th>Marca</th><th>Tipo</th><th>Sucursal</th><th>Estado</th><th>Acciones</th></tr></thead>
 <tbody id="tablaCamaras"></tbody>
 </table>
 </div>
@@ -92,24 +94,22 @@ let chart,editId=null,filtroEstado='';
 function mostrar(s){['dashboard','base','incidencias'].forEach(x=>document.getElementById(x).classList.add('hidden'));document.getElementById(s).classList.remove('hidden');}
 
 function guardarCamara(){
- let s=serie.value;
- if(!s) return alert('Serie requerida');
+ let n=nombre.value;
+ let m=marca.value;
+ let t=tipo.value;
+ if(!n || !m || !t) return alert('Completa todos los campos');
 
- db.collection('camaras').where('serie','==',s).get().then(res=>{
-  if(!editId && !res.empty) return alert('Serie duplicada');
-
-  if(editId){ db.collection('camaras').doc(editId).update({serie:s,estado:estado.value}); editId=null; }
-  else{ db.collection('camaras').add({serie:s,estado:estado.value,fecha:new Date().toISOString()}); }
- });
+ if(editId){ db.collection('camaras').doc(editId).update({nombre:n,marca:m,tipo:t,estado:estado.value,sucursal:sucursal.value}); editId=null; }
+ else{ db.collection('camaras').add({nombre:n,marca:m,tipo:t,estado:estado.value,sucursal:sucursal.value,fecha:new Date().toISOString()}); }
 }
 
-function editar(id,s,e){ serie.value=s; estado.value=e; editId=id; mostrar('base'); }
+function editar(id,n,m,t,e,su){ nombre.value=n; marca.value=m; tipo.value=t; estado.value=e; sucursal.value=su||''; editId=id; mostrar('base'); }
 function eliminar(id){ if(confirm('¿Eliminar?')) db.collection('camaras').doc(id).delete(); }
 
 function addInc(){ db.collection('incidencias').add({camara:camaraSelect.value,descripcion:desc.value,tecnico:tecnico.value}); }
 
 function cargar(){
- let bus=buscar.value.toLowerCase();
+ let suc=sucursal.value.toLowerCase();
  let t=0,a=0,f=0;
 
  db.collection('camaras').onSnapshot(sn=>{
@@ -117,20 +117,23 @@ function cargar(){
 
   sn.forEach(d=>{
    let c=d.data();
-   if(bus && !c.serie.toLowerCase().includes(bus)) return;
+   if(suc && !c.sucursal?.toLowerCase().includes(suc)) return;
    if(filtroEstado && c.estado!=filtroEstado) return;
 
    t++; if(c.estado=='Activa')a++; else f++;
 
    tablaCamaras.innerHTML+=`<tr>
-   <td>${c.serie}</td>
+   <td>${c.nombre}</td>
+   <td>${c.marca}</td>
+   <td>${c.tipo}</td>
+   <td>${c.sucursal||''}</td>
    <td class="${c.estado=='Falla'?'bad':'good'}">${c.estado}</td>
    <td>
-   <button onclick="editar('${d.id}','${c.serie}','${c.estado}')">✏️</button>
+   <button onclick="editar('${d.id}','${c.nombre}','${c.marca}','${c.tipo}','${c.estado}','${c.sucursal||''}')">✏️</button>
    <button class="delete" onclick="eliminar('${d.id}')">🗑️</button>
    </td></tr>`;
 
-   camaraSelect.innerHTML+=`<option>${c.serie}</option>`;
+   camaraSelect.innerHTML+=`<option>${c.nombre}</option>`;
   });
 
   bTotal.innerText=t; bAct.innerText=a; bFall.innerText=f;
