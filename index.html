@@ -3,201 +3,699 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema Cámaras PRO+++</title>
+<title>Sistema Cámaras PRO</title>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body { margin:0; font-family:'Segoe UI'; background:#eef2f7; display:flex; }
-.sidebar { width:220px; background:#1e293b; color:white; height:100vh; padding:20px 10px; }
-.sidebar button { width:100%; background:none; border:none; color:white; padding:10px; text-align:left; cursor:pointer; border-radius:6px; }
-.sidebar button:hover { background:#334155; }
-.main { flex:1; padding:20px; }
-.card { background:white; border-radius:12px; padding:15px; margin-bottom:15px; box-shadow:0 5px 15px rgba(0,0,0,0.08);} 
-input, select { width:100%; padding:8px; margin-top:5px; border-radius:6px; border:1px solid #ccc; }
-button { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; margin-top:5px; }
-.primary { background:#2563eb; color:white; }
-.delete { background:#dc2626; color:white; }
-.hidden { display:none; }
-table { width:100%; border-collapse:collapse; }
-th, td { padding:8px; border-bottom:1px solid #eee; }
-.smallChart { max-width:300px; margin:auto; }
+  /* ── Reset & base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f0f2f5;
+    display: flex;
+    min-height: 100vh;
+    color: #1e293b;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px;
+    background: #1e2535;
+    color: white;
+    height: 100vh;
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    flex-shrink: 0;
+  }
+  .sidebar-logo {
+    padding: 0 16px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .sidebar nav button {
+    width: 100%;
+    background: none;
+    border: none;
+    border-left: 2px solid transparent;
+    color: rgba(255,255,255,0.6);
+    padding: 10px 16px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 13.5px;
+    transition: all 0.15s;
+  }
+  .sidebar nav button:hover { color: #fff; background: rgba(255,255,255,0.06); }
+  .sidebar nav button.active {
+    color: #fff;
+    border-left-color: #4a90d9;
+    background: rgba(74,144,217,0.12);
+  }
+
+  /* ── Main ── */
+  .main { flex: 1; padding: 24px; overflow: auto; }
+
+  /* ── Section visibility ── */
+  .section { display: none; }
+  .section.visible { display: block; }
+
+  /* ── Page header ── */
+  .page-header { margin-bottom: 20px; }
+  .page-header h2 { font-size: 18px; font-weight: 500; }
+
+  /* ── Metric cards ── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .metric {
+    background: #e8eaed;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .metric-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+  .metric-value { font-size: 26px; font-weight: 500; color: #1e293b; }
+  .metric-value.ok   { color: #0f9d6a; }
+  .metric-value.fail { color: #d85a30; }
+  .metric-sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+  /* ── Status badge ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .badge-ok     { background: #dcfce7; color: #166534; }
+  .badge-warn   { background: #fef9c3; color: #854d0e; }
+  .badge-danger { background: #fee2e2; color: #991b1b; }
+
+  /* ── Cards ── */
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border: 0.5px solid rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+  }
+  .card-title { font-size: 14px; font-weight: 500; margin-bottom: 16px; color: #1e293b; }
+
+  /* ── Two-column layout ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* ── Chart legend ── */
+  .legend { display: flex; gap: 16px; margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── Branch bars ── */
+  .branch-list { display: flex; flex-direction: column; gap: 10px; }
+  .branch-row  { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .branch-name { width: 110px; color: #64748b; flex-shrink: 0; font-size: 12px; }
+  .bar-track   { flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; display: flex; }
+  .bar-ok   { background: #378add; height: 100%; transition: width 0.4s; }
+  .bar-fail { background: #d85a30; height: 100%; transition: width 0.4s; }
+  .branch-count { font-size: 12px; color: #94a3b8; min-width: 40px; text-align: right; }
+
+  /* ── Forms ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 12px; color: #64748b; }
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+    color: #1e293b;
+    background: white;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus,
+  .form-group select:focus { border-color: #4a90d9; }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 7px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #2563eb; color: white; }
+  .btn-danger  { background: #dc2626; color: white; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* ── Toast notification ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1e293b;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  #toast.show { opacity: 1; }
+
+  /* ── Table ── */
+  .table-wrap { overflow-x: auto; margin-top: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { border-bottom: 1px solid #e2e8f0; }
+  th { padding: 8px 10px; text-align: left; font-size: 12px; color: #64748b; font-weight: 500; }
+  td { padding: 9px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+  tr:last-child td { border-bottom: none; }
+  .estado-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .chip-activa { background: #dcfce7; color: #166534; }
+  .chip-falla  { background: #fee2e2; color: #991b1b; }
+
+  /* ── Empty state ── */
+  .empty {
+    text-align: center;
+    padding: 32px;
+    color: #94a3b8;
+    font-size: 13px;
+  }
+
+  /* ── Select filter ── */
+  .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .filter-bar select { max-width: 220px; padding: 7px 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px; outline: none; }
+  .filter-bar select:focus { border-color: #4a90d9; }
 </style>
 </head>
 <body>
 
+<!-- ── Sidebar ── -->
 <div class="sidebar">
-<button onclick="mostrar('dashboard')">Dashboard General</button>
-<button onclick="mostrar('dashboardSucursal')">Dashboard por Sucursal</button>
-<button onclick="mostrar('base')">Base cámaras</button>
-<button onclick="mostrar('incidencias')">Incidencias</button>
+  <div class="sidebar-logo">Cámaras</div>
+  <nav>
+    <button class="active" onclick="mostrar('dashboard', this)">Dashboard general</button>
+    <button onclick="mostrar('dashboardSucursal', this)">Dashboard por sucursal</button>
+    <button onclick="mostrar('base', this)">Base cámaras</button>
+    <button onclick="mostrar('incidencias', this)">Incidencias</button>
+  </nav>
 </div>
 
+<!-- ── Main ── -->
 <div class="main">
 
-<!-- DASHBOARD GENERAL -->
-<div id="dashboard" class="card">
-<h3>Resumen general</h3>
-<p>Total: <span id="total"></span></p>
-<p>Fallas: <span id="fall"></span></p>
-<p>Estado: <span id="alerta"></span></p>
-<div class="smallChart"><canvas id="grafica"></canvas></div>
+  <!-- DASHBOARD GENERAL -->
+  <div id="dashboard" class="section visible">
+    <div class="page-header"><h2>Resumen general</h2></div>
+
+    <div class="metrics-grid">
+      <div class="metric">
+        <div class="metric-label">Total cámaras</div>
+        <div class="metric-value" id="totalGeneral">—</div>
+        <div class="metric-sub">en toda la red</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Operativas</div>
+        <div class="metric-value ok" id="operativasGeneral">—</div>
+        <div class="metric-sub" id="pctOperativas">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Fallas</div>
+        <div class="metric-value fail" id="fallasGeneral">—</div>
+        <div class="metric-sub" id="pctFallas">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Estado general</div>
+        <div style="margin-top:8px;" id="estadoGeneral"><span class="badge badge-ok">Cargando…</span></div>
+        <div class="metric-sub" id="estadoSub"></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Distribución de estado</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#378add"></div>Operativas</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#d85a30"></div>Fallas</div>
+        </div>
+        <div style="position:relative;height:220px;">
+          <canvas id="grafica" role="img" aria-label="Gráfico de estado de cámaras">Sin datos.</canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Estado por sucursal</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#378add"></div>Operativas</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#d85a30"></div>Fallas</div>
+        </div>
+        <div class="branch-list" id="branchBars">
+          <div class="empty">Cargando datos…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD SUCURSAL -->
+  <div id="dashboardSucursal" class="section">
+    <div class="page-header"><h2>Dashboard por sucursal</h2></div>
+    <div class="filter-bar">
+      <select id="filtroSucursal" onchange="renderDashboardSucursal()">
+        <option value="">Selecciona sucursal</option>
+        <option>Corporativo</option><option>Cedis</option><option>Hidalgo</option>
+        <option>Construcasa</option><option>Ferrocarril</option><option>Simbolos</option>
+        <option>Santa Rosa</option><option>Atzompa</option><option>Viguera</option>
+        <option>Reforma</option><option>Tehuantepec</option><option>Puerto Escondido</option>
+      </select>
+    </div>
+
+    <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="metric">
+        <div class="metric-label">Total</div>
+        <div class="metric-value" id="sTotal">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Operativas</div>
+        <div class="metric-value ok" id="sOperativas">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Fallas</div>
+        <div class="metric-value fail" id="sFall">—</div>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:360px;">
+      <div class="card-title">Estado de la sucursal</div>
+      <div id="sAlertaWrap" style="margin-bottom:14px;"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#378add"></div>Operativas</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#d85a30"></div>Fallas</div>
+      </div>
+      <div style="position:relative;height:220px;">
+        <canvas id="graficaSucursal" role="img" aria-label="Gráfico sucursal">Sin datos.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- BASE CÁMARAS -->
+  <div id="base" class="section">
+    <div class="page-header"><h2>Base de cámaras</h2></div>
+    <div class="card">
+      <div class="card-title" id="formTitle">Agregar cámara</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Sucursal</label>
+          <select id="sucursal">
+            <option value="">Selecciona sucursal</option>
+            <option>Corporativo</option><option>Cedis</option><option>Hidalgo</option>
+            <option>Construcasa</option><option>Ferrocarril</option><option>Simbolos</option>
+            <option>Santa Rosa</option><option>Atzompa</option><option>Viguera</option>
+            <option>Reforma</option><option>Tehuantepec</option><option>Puerto Escondido</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nombre de cámara</label>
+          <input id="nombre" placeholder="Ej. CAM-01">
+        </div>
+        <div class="form-group">
+          <label>Marca</label>
+          <input id="marca" placeholder="Ej. Hikvision">
+        </div>
+        <div class="form-group">
+          <label>Tipo</label>
+          <input id="tipo" placeholder="Ej. Domo, Bala, PTZ">
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="estado">
+            <option>Activa</option>
+            <option>Falla</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="guardarCamara()">Guardar cámara</button>
+        <button class="btn" style="background:#f1f5f9;color:#64748b;" id="btnCancelar" onclick="cancelarEdicion()">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Cámaras registradas</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th><th>Marca</th><th>Tipo</th>
+              <th>Sucursal</th><th>Estado</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaCamaras"></tbody>
+        </table>
+        <div id="emptyBase" class="empty" style="display:none;">No hay cámaras registradas.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INCIDENCIAS -->
+  <div id="incidencias" class="section">
+    <div class="page-header"><h2>Incidencias</h2></div>
+    <div class="card">
+      <div class="card-title">Registrar incidencia</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Cámara</label>
+          <select id="camaraSelect"></select>
+        </div>
+        <div class="form-group">
+          <label>Técnico</label>
+          <input id="tecnico" placeholder="Nombre del técnico">
+        </div>
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Descripción</label>
+          <input id="desc" placeholder="Describe el problema">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addInc()">Guardar incidencia</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Historial de incidencias</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Cámara</th><th>Descripción</th><th>Técnico</th></tr>
+          </thead>
+          <tbody id="tablaInc"></tbody>
+        </table>
+        <div id="emptyInc" class="empty" style="display:none;">No hay incidencias registradas.</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<!-- DASHBOARD SUCURSAL -->
-<div id="dashboardSucursal" class="card hidden">
-<h3>Dashboard por sucursal</h3>
-<select id="filtroSucursal" onchange="cargar()">
-<option value="">Selecciona sucursal</option>
-<option>Corporativo</option>
-<option>Cedis</option>
-<option>Hidalgo</option>
-<option>Construcasa</option>
-<option>Ferrocarril</option>
-<option>Simbolos</option>
-<option>Santa Rosa</option>
-<option>Atzompa</option>
-<option>Viguera</option>
-<option>Reforma</option>
-<option>Tehuantepec</option>
-<option>Puerto Escondido</option>
-</select>
-
-<p>Total: <span id="sTotal"></span></p>
-<p>Fallas: <span id="sFall"></span></p>
-<p>Estado: <span id="sAlerta"></span></p>
-
-<div class="smallChart"><canvas id="graficaSucursal"></canvas></div>
-</div>
-
-<!-- BASE -->
-<div id="base" class="card hidden">
-<h3>Base de cámaras</h3>
-
-<select id="sucursal">
-<option value="">Selecciona sucursal</option>
-<option>Corporativo</option>
-<option>Cedis</option>
-<option>Hidalgo</option>
-<option>Construcasa</option>
-<option>Ferrocarril</option>
-<option>Simbolos</option>
-<option>Santa Rosa</option>
-<option>Atzompa</option>
-<option>Viguera</option>
-<option>Reforma</option>
-<option>Tehuantepec</option>
-<option>Puerto Escondido</option>
-</select>
-
-<input id="nombre" placeholder="Nombre de cámara">
-<input id="marca" placeholder="Marca">
-<input id="tipo" placeholder="Tipo">
-<select id="estado"><option>Activa</option><option>Falla</option></select>
-<button class="primary" onclick="guardarCamara()">Guardar</button>
-
-<table>
-<thead><tr><th>Nombre</th><th>Marca</th><th>Tipo</th><th>Sucursal</th><th>Estado</th><th>Acciones</th></tr></thead>
-<tbody id="tablaCamaras"></tbody>
-</table>
-</div>
-
-<!-- INCIDENCIAS -->
-<div id="incidencias" class="card hidden">
-<h3>Incidencias</h3>
-<select id="camaraSelect"></select>
-<input id="desc" placeholder="Descripción">
-<input id="tecnico" placeholder="Técnico">
-<button class="primary" onclick="addInc()">Guardar</button>
-<table><tbody id="tablaInc"></tbody></table>
-</div>
-
-</div>
+<!-- Toast -->
+<div id="toast"></div>
 
 <script>
-const firebaseConfig={apiKey:"AIzaSyBVs7GnPPChdilJSk99WG1IPeLJKvEjxVc",authDomain:"camaras-control.firebaseapp.com",projectId:"camaras-control"};
+const firebaseConfig = {
+  apiKey: "AIzaSyBVs7GnPPChdilJSk99WG1IPeLJKvEjxVc",
+  authDomain: "camaras-control.firebaseapp.com",
+  projectId: "camaras-control"
+};
 firebase.initializeApp(firebaseConfig);
-const db=firebase.firestore();
-let chart,chartSucursal,editId=null;
+const db = firebase.firestore();
 
-function mostrar(s){['dashboard','dashboardSucursal','base','incidencias'].forEach(x=>document.getElementById(x).classList.add('hidden'));document.getElementById(s).classList.remove('hidden');}
+let chartGeneral = null;
+let chartSucursal = null;
+let editId = null;
+let camarasCache = [];
 
-function guardarCamara(){
- let n=nombre.value;
- let m=marca.value;
- let t=tipo.value;
- if(!n||!m||!t) return alert('Completa campos');
-
- if(editId){ db.collection('camaras').doc(editId).update({nombre:n,marca:m,tipo:t,estado:estado.value,sucursal:sucursal.value}); editId=null; }
- else{ db.collection('camaras').add({nombre:n,marca:m,tipo:t,estado:estado.value,sucursal:sucursal.value}); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-function editar(id,n,m,t,e,su){ nombre.value=n; marca.value=m; tipo.value=t; estado.value=e; sucursal.value=su; editId=id; mostrar('base'); }
-function eliminar(id){ if(confirm('¿Eliminar?')) db.collection('camaras').doc(id).delete(); }
-
-function addInc(){ db.collection('incidencias').add({camara:camaraSelect.value,descripcion:desc.value,tecnico:tecnico.value}); }
-
-function cargar(){
- let totalC=0,fallas=0;
- let sucFiltro=filtroSucursal.value;
- let sTotalC=0,sFallas=0;
-
- db.collection('camaras').onSnapshot(sn=>{
-  tablaCamaras.innerHTML=''; camaraSelect.innerHTML='';
-
-  sn.forEach(d=>{
-   let c=d.data();
-   totalC++;
-   if(c.estado==='Falla') fallas++;
-
-   if(sucFiltro && c.sucursal===sucFiltro){
-     sTotalC++;
-     if(c.estado==='Falla') sFallas++;
-   }
-
-   tablaCamaras.innerHTML+=`<tr>
-   <td>${c.nombre}</td>
-   <td>${c.marca}</td>
-   <td>${c.tipo}</td>
-   <td>${c.sucursal}</td>
-   <td>${c.estado}</td>
-   <td>
-   <button onclick="editar('${d.id}','${c.nombre}','${c.marca}','${c.tipo}','${c.estado}','${c.sucursal}')">✏️</button>
-   <button class="delete" onclick="eliminar('${d.id}')">🗑️</button>
-   </td></tr>`;
-
-   camaraSelect.innerHTML+=`<option>${c.nombre}</option>`;
-  });
-
-  total.innerText=totalC;
-  fall.innerText=fallas;
-
-  if(chart)chart.destroy();
-  chart=new Chart(grafica,{type:'pie',data:{labels:['Total','Fallas'],datasets:[{data:[totalC,fallas]}]}});
-
-  // DASHBOARD SUCURSAL
-  sTotal.innerText=sTotalC;
-  sFall.innerText=sFallas;
-
-  let p=sTotalC? (sFallas/sTotalC)*100 : 0;
-  sAlerta.innerText=p>50?'🔥 Crítico':p>20?'⚠️ Medio':'✅ OK';
-
-  if(chartSucursal)chartSucursal.destroy();
-  chartSucursal=new Chart(graficaSucursal,{type:'pie',data:{labels:['Total','Fallas'],datasets:[{data:[sTotalC,sFallas]}]}});
- });
-
- db.collection('incidencias').onSnapshot(sn=>{
-  tablaInc.innerHTML='';
-  sn.forEach(d=>{
-   let i=d.data();
-   tablaInc.innerHTML+=`<tr><td>${i.camara}</td><td>${i.descripcion}</td><td>${i.tecnico}</td></tr>`;
-  });
- });
+function mostrar(seccion, btn) {
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('visible'));
+  document.querySelectorAll('.sidebar nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(seccion).classList.add('visible');
+  if (btn) btn.classList.add('active');
 }
 
-cargar();
+function guardarCamara() {
+  const sucursal = document.getElementById('sucursal').value.trim();
+  const nombre   = document.getElementById('nombre').value.trim();
+  const marca    = document.getElementById('marca').value.trim();
+  const tipo     = document.getElementById('tipo').value.trim();
+  const estado   = document.getElementById('estado').value;
+  if (!sucursal || !nombre || !marca || !tipo) {
+    toast('⚠ Completa todos los campos antes de guardar.');
+    return;
+  }
+  const data = { sucursal, nombre, marca, tipo, estado };
+  if (editId) {
+    db.collection('camaras').doc(editId).update(data)
+      .then(() => { toast('Cámara actualizada.'); cancelarEdicion(); })
+      .catch(() => toast('Error al actualizar.'));
+  } else {
+    db.collection('camaras').add(data)
+      .then(() => { toast('Cámara guardada.'); limpiarForm(); })
+      .catch(() => toast('Error al guardar.'));
+  }
+}
+
+function editar(id, sucursal, nombre, marca, tipo, estado) {
+  editId = id;
+  document.getElementById('sucursal').value = sucursal;
+  document.getElementById('nombre').value   = nombre;
+  document.getElementById('marca').value    = marca;
+  document.getElementById('tipo').value     = tipo;
+  document.getElementById('estado').value   = estado;
+  document.getElementById('formTitle').textContent = 'Editar cámara';
+  document.getElementById('btnCancelar').style.display = 'inline-block';
+  mostrar('base', document.querySelector('.sidebar nav button:nth-child(3)'));
+}
+
+function cancelarEdicion() {
+  editId = null;
+  limpiarForm();
+  document.getElementById('formTitle').textContent = 'Agregar cámara';
+  document.getElementById('btnCancelar').style.display = 'none';
+}
+
+function limpiarForm() {
+  ['sucursal','nombre','marca','tipo'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('estado').value = 'Activa';
+}
+
+function eliminar(id) {
+  if (confirm('¿Eliminar esta cámara?')) {
+    db.collection('camaras').doc(id).delete()
+      .then(() => toast('Cámara eliminada.'))
+      .catch(() => toast('Error al eliminar.'));
+  }
+}
+
+function addInc() {
+  const camara = document.getElementById('camaraSelect').value;
+  const desc   = document.getElementById('desc').value.trim();
+  const tec    = document.getElementById('tecnico').value.trim();
+  if (!camara || !desc || !tec) { toast('⚠ Completa todos los campos.'); return; }
+  db.collection('incidencias').add({ camara, descripcion: desc, tecnico: tec })
+    .then(() => {
+      toast('Incidencia registrada.');
+      document.getElementById('desc').value = '';
+      document.getElementById('tecnico').value = '';
+    })
+    .catch(() => toast('Error al guardar incidencia.'));
+}
+
+function renderDashboardGeneral(camaras) {
+  const total      = camaras.length;
+  const fallas     = camaras.filter(c => c.estado === 'Falla').length;
+  const operativas = total - fallas;
+  const pctF = total ? Math.round((fallas / total) * 100) : 0;
+  const pctO = total ? 100 - pctF : 0;
+
+  document.getElementById('totalGeneral').textContent      = total;
+  document.getElementById('operativasGeneral').textContent = operativas;
+  document.getElementById('fallasGeneral').textContent     = fallas;
+  document.getElementById('pctOperativas').textContent     = `${pctO}% del total`;
+  document.getElementById('pctFallas').textContent         = `${pctF}% del total`;
+
+  let badgeHtml;
+  if (pctF === 0) {
+    badgeHtml = `<span class="badge badge-ok">✓ Todo operativo</span>`;
+    document.getElementById('estadoSub').textContent = 'Sin fallas activas';
+  } else if (pctF <= 20) {
+    badgeHtml = `<span class="badge badge-warn">⚠ Atención leve</span>`;
+    document.getElementById('estadoSub').textContent = `${fallas} falla(s) activa(s)`;
+  } else if (pctF <= 50) {
+    badgeHtml = `<span class="badge badge-warn">⚠ Atención requerida</span>`;
+    document.getElementById('estadoSub').textContent = `${fallas} falla(s) activa(s)`;
+  } else {
+    badgeHtml = `<span class="badge badge-danger">✕ Estado crítico</span>`;
+    document.getElementById('estadoSub').textContent = `${fallas} de ${total} cámaras fallando`;
+  }
+  document.getElementById('estadoGeneral').innerHTML = badgeHtml;
+
+  if (chartGeneral) chartGeneral.destroy();
+  chartGeneral = new Chart(document.getElementById('grafica'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Operativas', 'Fallas'],
+      datasets: [{
+        data: [operativas, fallas],
+        backgroundColor: ['#378add', '#d85a30'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.raw} (${total ? Math.round(ctx.raw/total*100) : 0}%)`
+          }
+        }
+      }
+    }
+  });
+
+  const sucursales = {};
+  camaras.forEach(c => {
+    if (!sucursales[c.sucursal]) sucursales[c.sucursal] = { ok: 0, fail: 0 };
+    c.estado === 'Falla' ? sucursales[c.sucursal].fail++ : sucursales[c.sucursal].ok++;
+  });
+
+  const container = document.getElementById('branchBars');
+  const entries = Object.entries(sucursales);
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="empty">Sin datos por sucursal.</div>';
+    return;
+  }
+  container.innerHTML = entries.map(([nombre, { ok, fail }]) => {
+    const tot   = ok + fail;
+    const pOk   = Math.round((ok / tot) * 100);
+    const pFail = 100 - pOk;
+    return `<div class="branch-row">
+      <div class="branch-name">${nombre}</div>
+      <div class="bar-track">
+        <div class="bar-ok"   style="width:${pOk}%"></div>
+        <div class="bar-fail" style="width:${pFail}%"></div>
+      </div>
+      <div class="branch-count">${ok}/${fail}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderDashboardSucursal() {
+  const filtro     = document.getElementById('filtroSucursal').value;
+  const sub        = filtro ? camarasCache.filter(c => c.sucursal === filtro) : [];
+  const total      = sub.length;
+  const fallas     = sub.filter(c => c.estado === 'Falla').length;
+  const operativas = total - fallas;
+  const pctF       = total ? Math.round((fallas / total) * 100) : 0;
+
+  document.getElementById('sTotal').textContent      = total;
+  document.getElementById('sOperativas').textContent = operativas;
+  document.getElementById('sFall').textContent       = fallas;
+
+  let badge = '';
+  if (filtro) {
+    if (pctF === 0)       badge = `<span class="badge badge-ok">✓ Todo operativo</span>`;
+    else if (pctF <= 50)  badge = `<span class="badge badge-warn">⚠ Atención requerida</span>`;
+    else                  badge = `<span class="badge badge-danger">✕ Estado crítico</span>`;
+  }
+  document.getElementById('sAlertaWrap').innerHTML = badge;
+
+  if (chartSucursal) chartSucursal.destroy();
+  chartSucursal = new Chart(document.getElementById('graficaSucursal'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Operativas', 'Fallas'],
+      datasets: [{
+        data: [operativas, fallas],
+        backgroundColor: ['#378add', '#d85a30'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` } }
+      }
+    }
+  });
+}
+
+function renderTablaCamaras(camaras) {
+  const tbody  = document.getElementById('tablaCamaras');
+  const empty  = document.getElementById('emptyBase');
+  const select = document.getElementById('camaraSelect');
+
+  if (camaras.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    tbody.innerHTML = camaras.map(c => `
+      <tr>
+        <td>${c.nombre}</td>
+        <td>${c.marca}</td>
+        <td>${c.tipo}</td>
+        <td>${c.sucursal}</td>
+        <td><span class="estado-chip ${c.estado === 'Falla' ? 'chip-falla' : 'chip-activa'}">${c.estado}</span></td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn btn-sm" style="background:#f1f5f9;color:#334155;"
+            onclick="editar('${c.id}','${c.sucursal}','${c.nombre}','${c.marca}','${c.tipo}','${c.estado}')">Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="eliminar('${c.id}')">Eliminar</button>
+        </td>
+      </tr>`).join('');
+  }
+  select.innerHTML = camaras.length
+    ? camaras.map(c => `<option>${c.nombre}</option>`).join('')
+    : '<option value="">Sin cámaras</option>';
+}
+
+function renderIncidencias(incs) {
+  const tbody = document.getElementById('tablaInc');
+  const empty = document.getElementById('emptyInc');
+  if (incs.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    tbody.innerHTML = incs.map(i =>
+      `<tr><td>${i.camara}</td><td>${i.descripcion}</td><td>${i.tecnico}</td></tr>`
+    ).join('');
+  }
+}
+
+db.collection('camaras').onSnapshot(snapshot => {
+  camarasCache = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderDashboardGeneral(camarasCache);
+  renderDashboardSucursal();
+  renderTablaCamaras(camarasCache);
+});
+
+db.collection('incidencias').onSnapshot(snapshot => {
+  renderIncidencias(snapshot.docs.map(d => d.data()));
+});
 </script>
 </body>
 </html>
