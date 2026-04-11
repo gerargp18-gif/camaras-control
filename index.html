@@ -68,10 +68,7 @@ th, td { padding:8px; border-bottom:1px solid #eee; }
 
 <div class="card smallChart"><canvas id="grafica"></canvas></div>
 
-<div class="card">
-<h3>Gráfica por técnico</h3>
-<canvas id="graficaTec"></canvas>
-</div>
+
 
 <div class="card">
 <h3>Historial por cámara</h3>
@@ -85,7 +82,7 @@ th, td { padding:8px; border-bottom:1px solid #eee; }
 const firebaseConfig={apiKey:"AIzaSyBVs7GnPPChdilJSk99WG1IPeLJKvEjxVc",authDomain:"camaras-control.firebaseapp.com",projectId:"camaras-control"};
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
-let chart,chartTec,editId=null;
+let chart,editId=null;
 
 function guardarCamara(){
  let s=serie.value;
@@ -135,8 +132,7 @@ function cargarTodo(){
    tecCount[x.tecnico]=(tecCount[x.tecnico]||0)+1;
   });
   inc.innerText=i;
-  if(chartTec)chartTec.destroy();
-  chartTec=new Chart(graficaTec,{type:'bar',data:{labels:Object.keys(tecCount),datasets:[{data:Object.values(tecCount)}]}});
+  
  });
 }
 
