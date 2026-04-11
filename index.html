@@ -10,70 +10,59 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body { margin:0; font-family: 'Segoe UI'; background:#eef2f7; }
-.header { background:#1e293b; color:white; padding:15px; font-weight:bold; }
-.container { padding:20px; max-width:1200px; margin:auto; }
+body { margin:0; font-family:'Segoe UI'; background:#eef2f7; display:flex; }
+.sidebar { width:220px; background:#1e293b; color:white; height:100vh; padding:20px 10px; }
+.sidebar h2 { font-size:18px; margin-bottom:20px; }
+.sidebar button { width:100%; background:none; border:none; color:white; padding:10px; text-align:left; cursor:pointer; border-radius:6px; }
+.sidebar button:hover { background:#334155; }
+.main { flex:1; padding:20px; }
 .card { background:white; border-radius:12px; padding:15px; margin-bottom:15px; box-shadow:0 5px 15px rgba(0,0,0,0.08);} 
 input, select, textarea { width:100%; padding:8px; margin-top:5px; border-radius:6px; border:1px solid #ccc; }
-button { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; margin-top:5px; }
-.primary { background:#2563eb; color:white; }
-.success { background:#16a34a; color:white; }
-.warning { background:#f59e0b; color:white; }
-.danger { background:#dc2626; color:white; }
-.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:10px; }
+button.action { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; margin-top:5px; background:#2563eb; color:white; }
+button.delete { background:#dc2626; }
+.hidden { display:none; }
 table { width:100%; margin-top:10px; border-collapse:collapse; }
 th, td { padding:8px; border-bottom:1px solid #eee; }
-.smallChart { max-width:300px; margin:auto; }
+.smallChart { max-width:280px; margin:auto; }
 </style>
 </head>
 <body>
-<div class="header">Sistema Cámaras PRO+</div>
-<div class="container">
 
-<div class="card">
-<input id="buscador" placeholder="Buscar por serie o sucursal" onkeyup="cargarTodo()">
-<select id="filtroEstado" onchange="cargarTodo()">
-<option value="">Todos</option>
-<option>Activa</option>
-<option>Falla</option>
-</select>
-<input type="date" id="fi">
-<input type="date" id="ff">
-<button class="primary" onclick="exportar()">Exportar Excel</button>
+<div class="sidebar">
+<h2>📊 Sistema</h2>
+<button onclick="mostrar('dashboard')">Dashboard</button>
+<button onclick="mostrar('base')">Base cámaras</button>
+<button onclick="mostrar('incidencias')">Incidencias</button>
 </div>
 
-<div class="card">
-<h3>Cámaras</h3>
-<input id="serie">
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="card">
+<h3>Resumen general</h3>
+<p>Total cámaras: <span id="total"></span></p>
+<p>Con falla: <span id="fall"></span></p>
+<p>Estado del sistema: <span id="alerta"></span></p>
+<div class="smallChart"><canvas id="grafica"></canvas></div>
+</div>
+
+<!-- BASE CAMARAS -->
+<div id="base" class="card hidden">
+<h3>Base de cámaras</h3>
+<input id="serie" placeholder="Serie">
 <select id="estado"><option>Activa</option><option>Falla</option></select>
-<button class="success" onclick="guardarCamara()">Guardar</button>
-<table><tbody id="tablaCamaras"></tbody></table>
+<button class="action" onclick="guardarCamara()">Guardar</button>
+<table><thead><tr><th>Serie</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tablaCamaras"></tbody></table>
 </div>
 
-<div class="card">
+<!-- INCIDENCIAS -->
+<div id="incidencias" class="card hidden">
 <h3>Incidencias</h3>
 <select id="camaraSelect"></select>
-<textarea id="desc"></textarea>
-<input id="tecnico">
-<button class="warning" onclick="addInc()">Guardar</button>
-<table><tbody id="tablaInc"></tbody></table>
-</div>
-
-<div class="grid">
-<div class="card">Total: <span id="total"></span></div>
-<div class="card">Activas: <span id="act"></span></div>
-<div class="card">Fallas: <span id="fall"></span></div>
-<div class="card">Incidencias: <span id="inc"></span></div>
-</div>
-
-<div class="card smallChart"><canvas id="grafica"></canvas></div>
-
-
-
-<div class="card">
-<h3>Historial por cámara</h3>
-<select id="histCam" onchange="historial()"></select>
-<ul id="historialLista"></ul>
+<textarea id="desc" placeholder="Descripción"></textarea>
+<input id="tecnico" placeholder="Técnico">
+<button class="action" onclick="addInc()">Guardar</button>
+<table><thead><tr><th>Cámara</th><th>Descripción</th><th>Técnico</th></tr></thead><tbody id="tablaInc"></tbody></table>
 </div>
 
 </div>
@@ -84,81 +73,84 @@ firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 let chart,editId=null;
 
-function guardarCamara(){
- let s=serie.value;
- if(editId){ db.collection('camaras').doc(editId).update({serie:s,estado:estado.value}); editId=null; }
- else{ db.collection('camaras').add({serie:s,estado:estado.value}); }
+function mostrar(sec){
+ ['dashboard','base','incidencias'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+ document.getElementById(sec).classList.remove('hidden');
 }
 
-function eliminar(id){ if(confirm('¿Eliminar?')) db.collection('camaras').doc(id).delete(); }
+function guardarCamara(){
+ if(editId){ db.collection('camaras').doc(editId).update({serie:serie.value,estado:estado.value}); editId=null; }
+ else{ db.collection('camaras').add({serie:serie.value,estado:estado.value}); }
+}
 
-function editar(id,s,e){ serie.value=s; estado.value=e; editId=id; }
+function eliminar(id){ if(confirm('¿Eliminar cámara?')) db.collection('camaras').doc(id).delete(); }
+
+function editar(id,s,e){ serie.value=s; estado.value=e; editId=id; mostrar('base'); }
 
 function addInc(){ db.collection('incidencias').add({camara:camaraSelect.value,descripcion:desc.value,tecnico:tecnico.value,fecha:new Date().toISOString()}); }
 
-function cargarTodo(){
- let b=buscador.value.toLowerCase();
- let f=filtroEstado.value;
- let fiVal=fi.value, ffVal=ff.value;
- let t=0,a=0,fa=0,i=0;
- let tecCount={};
+function cargar(){
+ let totalC=0, fallas=0;
 
  db.collection('camaras').onSnapshot(sn=>{
-  tablaCamaras.innerHTML=''; camaraSelect.innerHTML=''; histCam.innerHTML='';
+  tablaCamaras.innerHTML=''; camaraSelect.innerHTML='';
+  totalC=0; fallas=0;
+
   sn.forEach(d=>{
    let c=d.data();
-   if(b && !c.serie.toLowerCase().includes(b)) return;
-   if(f && c.estado!=f) return;
-   t++; if(c.estado=='Activa')a++; else fa++;
-   tablaCamaras.innerHTML+=`<tr><td>${c.serie}</td><td>${c.estado}</td><td>
-   <button onclick="editar('${d.id}','${c.serie}','${c.estado}')">✏️</button>
-   <button onclick="eliminar('${d.id}')">🗑️</button></td></tr>`;
+   totalC++;
+   if(c.estado==='Falla') fallas++;
+
+   tablaCamaras.innerHTML+=`<tr>
+     <td>${c.serie}</td>
+     <td>${c.estado}</td>
+     <td>
+      <button onclick="editar('${d.id}','${c.serie}','${c.estado}')">✏️</button>
+      <button class="delete" onclick="eliminar('${d.id}')">🗑️</button>
+     </td>
+   </tr>`;
+
    camaraSelect.innerHTML+=`<option>${c.serie}</option>`;
-   histCam.innerHTML+=`<option>${c.serie}</option>`;
   });
-  total.innerText=t; act.innerText=a; fall.innerText=fa;
-  if(chart)chart.destroy();
-  chart=new Chart(grafica,{type:'pie',data:{labels:['Activas','Fallas'],datasets:[{data:[a,fa]}]}});
+
+  total.innerText=totalC;
+  fall.innerText=fallas;
+
+  // ALERTAS INTELIGENTES
+  let porcentaje = totalC ? (fallas/totalC)*100 : 0;
+  let alertaTexto = document.getElementById('alerta');
+
+  if(porcentaje === 0){
+    alertaTexto.innerText = '✅ Sin fallas';
+    alertaTexto.style.color = 'green';
+  } else if(porcentaje < 30){
+    alertaTexto.innerText = '⚠️ Nivel bajo de fallas';
+    alertaTexto.style.color = '#f59e0b';
+  } else if(porcentaje < 60){
+    alertaTexto.innerText = '🚨 Nivel medio de fallas';
+    alertaTexto.style.color = 'orange';
+  } else {
+    alertaTexto.innerText = '🔥 Nivel crítico de fallas';
+    alertaTexto.style.color = 'red';
+  }
+
+  if(chart) chart.destroy();
+  chart=new Chart(grafica,{
+    type:'pie',
+    data:{labels:['Total cámaras','Con falla'],datasets:[{data:[totalC,fallas]}]}
+  });
  });
 
  db.collection('incidencias').onSnapshot(sn=>{
-  tablaInc.innerHTML=''; i=0;
-  sn.forEach(d=>{
-   let x=d.data(); let fecha=x.fecha?.split('T')[0];
-   if(fiVal && fecha<fiVal) return;
-   if(ffVal && fecha>ffVal) return;
-   i++;
-   tablaInc.innerHTML+=`<tr><td>${x.camara}</td><td>${x.descripcion}</td><td>${x.tecnico}</td></tr>`;
-   tecCount[x.tecnico]=(tecCount[x.tecnico]||0)+1;
-  });
-  inc.innerText=i;
-  
- });
-}
-
-function historial(){
- let cam=histCam.value;
- historialLista.innerHTML='';
- db.collection('incidencias').where('camara','==',cam).onSnapshot(sn=>{
+  tablaInc.innerHTML='';
   sn.forEach(d=>{
    let i=d.data();
-   historialLista.innerHTML+=`<li>${i.descripcion} - ${i.tecnico}</li>`;
+   tablaInc.innerHTML+=`<tr><td>${i.camara}</td><td>${i.descripcion}</td><td>${i.tecnico}</td></tr>`;
   });
  });
 }
 
-function exportar(){
- let csv='Camara,Descripcion,Tecnico\n';
- document.querySelectorAll('#tablaInc tr').forEach(r=>{
-  let c=r.children;
-  csv+=`${c[0].innerText},${c[1].innerText},${c[2].innerText}\n`;
- });
- let blob=new Blob([csv]);
- let a=document.createElement('a'); a.href=URL.createObjectURL(blob);
- a.download='reporte.csv'; a.click();
-}
-
-cargarTodo();
+cargar();
 </script>
 </body>
 </html>
