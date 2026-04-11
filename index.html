@@ -10,50 +10,102 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body { font-family: Arial; background:#f4f6f9; padding:20px; }
-.container { max-width:1100px; margin:auto; }
-.card { background:white; padding:20px; border-radius:12px; margin-bottom:20px; box-shadow:0 2px 6px rgba(0,0,0,0.1);} 
-input, select, textarea { padding:10px; margin:5px 0; width:100%; border-radius:6px; border:1px solid #ccc; }
+body { margin:0; font-family: 'Segoe UI', Arial; background:#eef2f7; }
 
-.btn-group { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-button { padding:10px 15px; border:none; border-radius:8px; cursor:pointer; }
-.primary { background:#007bff; color:white; }
-.success { background:#28a745; color:white; }
-.warning { background:#ffc107; }
-.danger { background:#dc3545; color:white; }
+.header {
+  background:#1e293b;
+  color:white;
+  padding:15px 20px;
+  font-size:18px;
+  font-weight:bold;
+}
 
-.grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.container { padding:20px; max-width:1200px; margin:auto; }
+
+.card {
+  background:white;
+  border-radius:16px;
+  padding:20px;
+  margin-bottom:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.08);
+}
+
+h2 { margin-top:0; }
+
+input, select, textarea {
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  border-radius:8px;
+  border:1px solid #d1d5db;
+}
+
+.btn {
+  padding:10px 15px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.primary { background:#2563eb; color:white; }
+.success { background:#16a34a; color:white; }
+.warning { background:#f59e0b; color:white; }
+
+.btn-group { display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+
+.grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
+  gap:20px;
+}
+
+.stat {
+  font-size:20px;
+  font-weight:bold;
+}
+
+.stat small {
+  display:block;
+  color:#6b7280;
+  font-weight:normal;
+}
 
 table { width:100%; border-collapse:collapse; margin-top:10px; }
-th, td { padding:10px; border-bottom:1px solid #ddd; }
+th, td { padding:10px; border-bottom:1px solid #eee; }
+
+.bad { color:#dc2626; font-weight:bold; }
+.good { color:#16a34a; font-weight:bold; }
 </style>
 </head>
 <body>
+
+<div class="header">📊 Sistema Profesional de Cámaras</div>
+
 <div class="container">
 
-<!-- SUCURSAL -->
 <div class="card">
 <h2>Sucursal</h2>
 <input id="nuevaSucursal" placeholder="Nueva sucursal">
 <div class="btn-group">
-<button class="primary" onclick="addSucursal()">Agregar</button>
+<button class="btn primary" onclick="addSucursal()">Agregar</button>
 </div>
 <select id="sucursal" onchange="cargarTodo()"></select>
 </div>
 
-<!-- EQUIPOS -->
+<div class="grid">
+
 <div class="card">
 <h2>Equipos</h2>
 <input id="eqNombre" placeholder="Nombre">
 <input id="eqMarca" placeholder="Marca">
 <input id="eqModelo" placeholder="Modelo">
 <div class="btn-group">
-<button class="success" onclick="addEquipo()">Guardar equipo</button>
+<button class="btn success" onclick="addEquipo()">Guardar</button>
 </div>
 <table><tbody id="tablaEquipos"></tbody></table>
 </div>
 
-<!-- CAMARAS -->
 <div class="card">
 <h2>Cámaras</h2>
 <select id="equipoSelect"></select>
@@ -63,37 +115,41 @@ th, td { padding:10px; border-bottom:1px solid #ddd; }
 <option>Falla</option>
 </select>
 <div class="btn-group">
-<button class="success" onclick="addCamara()">Guardar cámara</button>
+<button class="btn success" onclick="addCamara()">Guardar</button>
 </div>
 <table><tbody id="tablaCamaras"></tbody></table>
 </div>
 
-<!-- INCIDENCIAS -->
+</div>
+
 <div class="card">
 <h2>Incidencias</h2>
 <select id="camaraSelect"></select>
 <textarea id="desc" placeholder="Descripción"></textarea>
 <input id="tecnico" placeholder="Técnico">
 <div class="btn-group">
-<button class="warning" onclick="addInc()">Registrar incidencia</button>
+<button class="btn warning" onclick="addInc()">Registrar</button>
 </div>
 <table><tbody id="tablaInc"></tbody></table>
 </div>
 
-<!-- DASHBOARD -->
 <div class="grid">
 <div class="card">
-<h3>Resumen</h3>
-<p>Total: <span id="rTotal"></span></p>
-<p>Activas: <span id="rActivas"></span></p>
-<p>Fallas: <span id="rFallas"></span></p>
-<p>Incidencias: <span id="rInc"></span></p>
+<div class="stat">📦 <span id="rTotal"></span><small>Total cámaras</small></div>
+</div>
+<div class="card">
+<div class="stat">🟢 <span id="rActivas"></span><small>Activas</small></div>
+</div>
+<div class="card">
+<div class="stat">🔴 <span id="rFallas"></span><small>Fallas</small></div>
+</div>
+<div class="card">
+<div class="stat">⚠️ <span id="rInc"></span><small>Incidencias</small></div>
+</div>
 </div>
 
 <div class="card">
-<h3>Gráfica</h3>
 <canvas id="grafica"></canvas>
-</div>
 </div>
 
 </div>
@@ -111,32 +167,11 @@ let chart;
 
 function addSucursal(){ db.collection('sucursales').add({nombre:nuevaSucursal.value}); }
 
-function addEquipo(){
- db.collection('equipos').add({
-  nombre:eqNombre.value,
-  marca:eqMarca.value,
-  modelo:eqModelo.value,
-  sucursal:sucursal.value
- });
-}
+function addEquipo(){ db.collection('equipos').add({nombre:eqNombre.value,marca:eqMarca.value,modelo:eqModelo.value,sucursal:sucursal.value}); }
 
-function addCamara(){
- db.collection('camaras').add({
-  equipo:equipoSelect.value,
-  serie:serie.value,
-  estado:estado.value,
-  sucursal:sucursal.value
- });
-}
+function addCamara(){ db.collection('camaras').add({equipo:equipoSelect.value,serie:serie.value,estado:estado.value,sucursal:sucursal.value}); }
 
-function addInc(){
- db.collection('incidencias').add({
-  camara:camaraSelect.value,
-  descripcion:desc.value,
-  tecnico:tecnico.value,
-  fecha:new Date().toISOString()
- });
-}
+function addInc(){ db.collection('incidencias').add({camara:camaraSelect.value,descripcion:desc.value,tecnico:tecnico.value,fecha:new Date().toISOString()}); }
 
 function cargarSucursales(){
  db.collection('sucursales').onSnapshot(s=>{
@@ -168,8 +203,7 @@ function cargarTodo(){
     let c=d.data();
     total++;
     if(c.estado==='Activa') act++; else fall++;
-
-    tablaCamaras.innerHTML+=`<tr><td>${c.serie}</td><td>${c.estado}</td></tr>`;
+    tablaCamaras.innerHTML+=`<tr><td>${c.serie}</td><td class="${c.estado==='Falla'?'bad':'good'}">${c.estado}</td></tr>`;
     camaraSelect.innerHTML+=`<option>${c.serie}</option>`;
   });
 
