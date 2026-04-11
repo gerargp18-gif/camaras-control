@@ -124,7 +124,7 @@ function cargar(){
 
   sn.forEach(d=>{
    let c=d.data();
-   if(suc && c.sucursal?.toLow
+   if(suc && c.sucursal?.toLowerCase()!==suc) return;
    if(filtroEstado && c.estado!=filtroEstado) return;
 
    t++; if(c.estado=='Activa')a++; else f++;
