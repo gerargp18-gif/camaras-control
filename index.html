@@ -160,6 +160,7 @@
   .btn:hover { opacity: 0.85; }
   .btn-primary { background: #2563eb; color: white; }
   .btn-danger  { background: #dc2626; color: white; }
+  .btn-success { background: #16a34a; color: white; }
   .btn-sm { padding: 4px 10px; font-size: 12px; }
 
   /* ── Toast notification ── */
@@ -208,6 +209,110 @@
   .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
   .filter-bar select { max-width: 220px; padding: 7px 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px; outline: none; }
   .filter-bar select:focus { border-color: #4a90d9; }
+
+  /* ════════════════════════════════════════
+     MÓDULO DE REPORTES — estilos nuevos
+  ════════════════════════════════════════ */
+
+  .report-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+    background: white;
+    border-radius: 12px;
+    padding: 16px 20px;
+    border: 0.5px solid rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+  }
+  .report-controls .form-group { min-width: 140px; }
+  .report-controls .btn { align-self: flex-end; }
+
+  .period-pills { display: flex; gap: 6px; }
+  .period-pill {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .period-pill:hover { border-color: #4a90d9; color: #4a90d9; }
+  .period-pill.active { background: #2563eb; border-color: #2563eb; color: white; }
+
+  .report-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .report-metric {
+    background: white;
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 0.5px solid rgba(0,0,0,0.08);
+    text-align: center;
+  }
+  .report-metric .rm-value { font-size: 28px; font-weight: 600; color: #1e293b; }
+  .report-metric .rm-label { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+  .report-metric.accent-blue .rm-value  { color: #2563eb; }
+  .report-metric.accent-amber .rm-value { color: #d97706; }
+  .report-metric.accent-red .rm-value   { color: #dc2626; }
+  .report-metric.accent-green .rm-value { color: #16a34a; }
+
+  .report-chart-wrap { position: relative; height: 240px; }
+
+  .report-table th { background: #f8fafc; }
+  .report-table tr:hover td { background: #f8fafc; }
+
+  .period-badge {
+    display: inline-block;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+
+  .export-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-export:hover { background: #dcfce7; }
+  .btn-export svg { flex-shrink: 0; }
+
+  .custom-range { display: none; gap: 10px; align-items: flex-end; }
+  .custom-range.visible { display: flex; }
+  .report-sucursal-filter { min-width: 180px; }
+
+  .report-empty { text-align: center; padding: 48px 20px; color: #94a3b8; }
+  .report-empty .re-icon { font-size: 36px; margin-bottom: 12px; }
+  .report-empty .re-title { font-size: 14px; font-weight: 500; color: #64748b; }
+  .report-empty .re-sub { font-size: 13px; margin-top: 4px; }
+
+  .loading-row td { text-align: center; color: #94a3b8; font-size: 13px; padding: 32px; }
 </style>
 </head>
 <body>
@@ -220,6 +325,7 @@
     <button onclick="mostrar('dashboardSucursal', this)">Dashboard por sucursal</button>
     <button onclick="mostrar('base', this)">Base cámaras</button>
     <button onclick="mostrar('incidencias', this)">Incidencias</button>
+    <button onclick="mostrar('reportes', this)">Reportes</button>
   </nav>
 </div>
 
@@ -229,7 +335,6 @@
   <!-- DASHBOARD GENERAL -->
   <div id="dashboard" class="section visible">
     <div class="page-header"><h2>Resumen general</h2></div>
-
     <div class="metrics-grid">
       <div class="metric">
         <div class="metric-label">Total cámaras</div>
@@ -252,7 +357,6 @@
         <div class="metric-sub" id="estadoSub"></div>
       </div>
     </div>
-
     <div class="two-col">
       <div class="card">
         <div class="card-title">Distribución de estado</div>
@@ -289,7 +393,6 @@
         <option>Reforma</option><option>Tehuantepec</option><option>Puerto Escondido</option>
       </select>
     </div>
-
     <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr)">
       <div class="metric">
         <div class="metric-label">Total</div>
@@ -304,7 +407,6 @@
         <div class="metric-value fail" id="sFall">—</div>
       </div>
     </div>
-
     <div class="card" style="max-width:360px;">
       <div class="card-title">Estado de la sucursal</div>
       <div id="sAlertaWrap" style="margin-bottom:14px;"></div>
@@ -359,7 +461,6 @@
         <button class="btn" style="background:#f1f5f9;color:#64748b;" id="btnCancelar" onclick="cancelarEdicion()">Cancelar</button>
       </div>
     </div>
-
     <div class="card">
       <div class="card-title">Cámaras registradas</div>
       <div class="table-wrap">
@@ -398,13 +499,12 @@
       </div>
       <button class="btn btn-primary" onclick="addInc()">Guardar incidencia</button>
     </div>
-
     <div class="card">
       <div class="card-title">Historial de incidencias</div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Cámara</th><th>Descripción</th><th>Técnico</th></tr>
+            <tr><th>Cámara</th><th>Descripción</th><th>Técnico</th><th>Fecha</th></tr>
           </thead>
           <tbody id="tablaInc"></tbody>
         </table>
@@ -413,9 +513,121 @@
     </div>
   </div>
 
+  <!-- MÓDULO DE REPORTES -->
+  <div id="reportes" class="section">
+    <div class="page-header">
+      <h2>Reportes de incidencias <span class="period-badge" id="reportePeriodoBadge">Día</span></h2>
+    </div>
+
+    <div class="report-controls">
+      <div class="form-group">
+        <label>Periodo</label>
+        <div class="period-pills">
+          <button class="period-pill active" onclick="setPeriodo('dia',   this)">Día</button>
+          <button class="period-pill"        onclick="setPeriodo('semana',this)">Semana</button>
+          <button class="period-pill"        onclick="setPeriodo('mes',   this)">Mes</button>
+          <button class="period-pill"        onclick="setPeriodo('custom',this)">Personalizado</button>
+        </div>
+      </div>
+
+      <div class="custom-range" id="customRange">
+        <div class="form-group">
+          <label>Desde</label>
+          <input type="date" id="fechaDesde">
+        </div>
+        <div class="form-group">
+          <label>Hasta</label>
+          <input type="date" id="fechaHasta">
+        </div>
+        <button class="btn btn-primary" onclick="aplicarFiltro()">Aplicar</button>
+      </div>
+
+      <div class="form-group report-sucursal-filter">
+        <label>Sucursal</label>
+        <select id="reporteSucursal" onchange="aplicarFiltro()">
+          <option value="">Todas las sucursales</option>
+          <option>Corporativo</option><option>Cedis</option><option>Hidalgo</option>
+          <option>Construcasa</option><option>Ferrocarril</option><option>Simbolos</option>
+          <option>Santa Rosa</option><option>Atzompa</option><option>Viguera</option>
+          <option>Reforma</option><option>Tehuantepec</option><option>Puerto Escondido</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="min-width:160px;">
+        <label>Técnico</label>
+        <select id="reporteTecnico" onchange="aplicarFiltro()">
+          <option value="">Todos los técnicos</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="report-metrics">
+      <div class="report-metric accent-blue">
+        <div class="rm-value" id="rTotal">0</div>
+        <div class="rm-label">Total incidencias</div>
+      </div>
+      <div class="report-metric accent-amber">
+        <div class="rm-value" id="rCamaras">0</div>
+        <div class="rm-label">Cámaras involucradas</div>
+      </div>
+      <div class="report-metric accent-red">
+        <div class="rm-value" id="rTecnicos">0</div>
+        <div class="rm-label">Técnicos activos</div>
+      </div>
+      <div class="report-metric accent-green">
+        <div class="rm-value" id="rSucursales">0</div>
+        <div class="rm-label">Sucursales afectadas</div>
+      </div>
+    </div>
+
+    <div class="two-col" style="margin-bottom:16px;">
+      <div class="card">
+        <div class="card-title">Incidencias por día</div>
+        <div class="report-chart-wrap">
+          <canvas id="graficaReporte" role="img" aria-label="Gráfico de incidencias por día"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Top sucursales con más incidencias</div>
+        <div class="branch-list" id="reporteBranchBars">
+          <div class="empty">Sin datos en el periodo.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Detalle de incidencias</div>
+      <div class="export-bar">
+        <button class="btn-export" onclick="exportarCSV()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Descargar CSV
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Fecha</th><th>Hora</th><th>Cámara</th>
+              <th>Sucursal</th><th>Técnico</th><th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody id="tablaReporte">
+            <tr class="loading-row"><td colspan="7">Cargando incidencias…</td></tr>
+          </tbody>
+        </table>
+        <div id="emptyReporte" class="report-empty" style="display:none;">
+          <div class="re-icon">📋</div>
+          <div class="re-title">Sin incidencias en este periodo</div>
+          <div class="re-sub">Prueba cambiando el rango de fechas o los filtros</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<!-- Toast -->
 <div id="toast"></div>
 
 <script>
@@ -427,10 +639,13 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-let chartGeneral = null;
+let chartGeneral  = null;
 let chartSucursal = null;
-let editId = null;
-let camarasCache = [];
+let chartReporte  = null;
+let editId        = null;
+let camarasCache  = [];
+let periodoActual = 'dia';
+let incidenciasCache = [];
 
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -444,6 +659,7 @@ function mostrar(seccion, btn) {
   document.querySelectorAll('.sidebar nav button').forEach(b => b.classList.remove('active'));
   document.getElementById(seccion).classList.add('visible');
   if (btn) btn.classList.add('active');
+  if (seccion === 'reportes') aplicarFiltro();
 }
 
 function guardarCamara() {
@@ -452,10 +668,7 @@ function guardarCamara() {
   const marca    = document.getElementById('marca').value.trim();
   const tipo     = document.getElementById('tipo').value.trim();
   const estado   = document.getElementById('estado').value;
-  if (!sucursal || !nombre || !marca || !tipo) {
-    toast('⚠ Completa todos los campos antes de guardar.');
-    return;
-  }
+  if (!sucursal || !nombre || !marca || !tipo) { toast('⚠ Completa todos los campos.'); return; }
   const data = { sucursal, nombre, marca, tipo, estado };
   if (editId) {
     db.collection('camaras').doc(editId).update(data)
@@ -488,9 +701,7 @@ function cancelarEdicion() {
 }
 
 function limpiarForm() {
-  ['sucursal','nombre','marca','tipo'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
+  ['sucursal','nombre','marca','tipo'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('estado').value = 'Activa';
 }
 
@@ -507,13 +718,18 @@ function addInc() {
   const desc   = document.getElementById('desc').value.trim();
   const tec    = document.getElementById('tecnico').value.trim();
   if (!camara || !desc || !tec) { toast('⚠ Completa todos los campos.'); return; }
-  db.collection('incidencias').add({ camara, descripcion: desc, tecnico: tec })
-    .then(() => {
-      toast('Incidencia registrada.');
-      document.getElementById('desc').value = '';
-      document.getElementById('tecnico').value = '';
-    })
-    .catch(() => toast('Error al guardar incidencia.'));
+  const cam = camarasCache.find(c => c.nombre === camara);
+  const sucursal = cam ? cam.sucursal : '';
+  db.collection('incidencias').add({
+    camara, sucursal, descripcion: desc, tecnico: tec,
+    fecha: firebase.firestore.FieldValue.serverTimestamp()
+  })
+  .then(() => {
+    toast('Incidencia registrada.');
+    document.getElementById('desc').value    = '';
+    document.getElementById('tecnico').value = '';
+  })
+  .catch(() => toast('Error al guardar incidencia.'));
 }
 
 function renderDashboardGeneral(camaras) {
@@ -550,24 +766,13 @@ function renderDashboardGeneral(camaras) {
     type: 'doughnut',
     data: {
       labels: ['Operativas', 'Fallas'],
-      datasets: [{
-        data: [operativas, fallas],
-        backgroundColor: ['#378add', '#d85a30'],
-        borderWidth: 2,
-        borderColor: '#ffffff'
-      }]
+      datasets: [{ data: [operativas, fallas], backgroundColor: ['#378add','#d85a30'], borderWidth: 2, borderColor: '#ffffff' }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '60%',
+      responsive: true, maintainAspectRatio: false, cutout: '60%',
       plugins: {
         legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.label}: ${ctx.raw} (${total ? Math.round(ctx.raw/total*100) : 0}%)`
-          }
-        }
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} (${total ? Math.round(ctx.raw/total*100) : 0}%)` } }
       }
     }
   });
@@ -577,22 +782,17 @@ function renderDashboardGeneral(camaras) {
     if (!sucursales[c.sucursal]) sucursales[c.sucursal] = { ok: 0, fail: 0 };
     c.estado === 'Falla' ? sucursales[c.sucursal].fail++ : sucursales[c.sucursal].ok++;
   });
-
   const container = document.getElementById('branchBars');
-  const entries = Object.entries(sucursales);
-  if (entries.length === 0) {
-    container.innerHTML = '<div class="empty">Sin datos por sucursal.</div>';
-    return;
-  }
+  const entries   = Object.entries(sucursales);
+  if (entries.length === 0) { container.innerHTML = '<div class="empty">Sin datos.</div>'; return; }
   container.innerHTML = entries.map(([nombre, { ok, fail }]) => {
-    const tot   = ok + fail;
-    const pOk   = Math.round((ok / tot) * 100);
-    const pFail = 100 - pOk;
+    const tot = ok + fail;
+    const pOk = Math.round((ok / tot) * 100);
     return `<div class="branch-row">
       <div class="branch-name">${nombre}</div>
       <div class="bar-track">
-        <div class="bar-ok"   style="width:${pOk}%"></div>
-        <div class="bar-fail" style="width:${pFail}%"></div>
+        <div class="bar-ok" style="width:${pOk}%"></div>
+        <div class="bar-fail" style="width:${100-pOk}%"></div>
       </div>
       <div class="branch-count">${ok}/${fail}</div>
     </div>`;
@@ -606,40 +806,21 @@ function renderDashboardSucursal() {
   const fallas     = sub.filter(c => c.estado === 'Falla').length;
   const operativas = total - fallas;
   const pctF       = total ? Math.round((fallas / total) * 100) : 0;
-
   document.getElementById('sTotal').textContent      = total;
   document.getElementById('sOperativas').textContent = operativas;
   document.getElementById('sFall').textContent       = fallas;
-
   let badge = '';
   if (filtro) {
-    if (pctF === 0)       badge = `<span class="badge badge-ok">✓ Todo operativo</span>`;
-    else if (pctF <= 50)  badge = `<span class="badge badge-warn">⚠ Atención requerida</span>`;
-    else                  badge = `<span class="badge badge-danger">✕ Estado crítico</span>`;
+    if (pctF === 0)      badge = `<span class="badge badge-ok">✓ Todo operativo</span>`;
+    else if (pctF <= 50) badge = `<span class="badge badge-warn">⚠ Atención requerida</span>`;
+    else                 badge = `<span class="badge badge-danger">✕ Estado crítico</span>`;
   }
   document.getElementById('sAlertaWrap').innerHTML = badge;
-
   if (chartSucursal) chartSucursal.destroy();
   chartSucursal = new Chart(document.getElementById('graficaSucursal'), {
     type: 'doughnut',
-    data: {
-      labels: ['Operativas', 'Fallas'],
-      datasets: [{
-        data: [operativas, fallas],
-        backgroundColor: ['#378add', '#d85a30'],
-        borderWidth: 2,
-        borderColor: '#ffffff'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '60%',
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` } }
-      }
-    }
+    data: { labels: ['Operativas','Fallas'], datasets: [{ data: [operativas, fallas], backgroundColor: ['#378add','#d85a30'], borderWidth: 2, borderColor: '#ffffff' }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: false } } }
   });
 }
 
@@ -647,18 +828,13 @@ function renderTablaCamaras(camaras) {
   const tbody  = document.getElementById('tablaCamaras');
   const empty  = document.getElementById('emptyBase');
   const select = document.getElementById('camaraSelect');
-
   if (camaras.length === 0) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
+    tbody.innerHTML = ''; empty.style.display = 'block';
   } else {
     empty.style.display = 'none';
     tbody.innerHTML = camaras.map(c => `
       <tr>
-        <td>${c.nombre}</td>
-        <td>${c.marca}</td>
-        <td>${c.tipo}</td>
-        <td>${c.sucursal}</td>
+        <td>${c.nombre}</td><td>${c.marca}</td><td>${c.tipo}</td><td>${c.sucursal}</td>
         <td><span class="estado-chip ${c.estado === 'Falla' ? 'chip-falla' : 'chip-activa'}">${c.estado}</span></td>
         <td style="display:flex;gap:6px;">
           <button class="btn btn-sm" style="background:#f1f5f9;color:#334155;"
@@ -676,16 +852,186 @@ function renderIncidencias(incs) {
   const tbody = document.getElementById('tablaInc');
   const empty = document.getElementById('emptyInc');
   if (incs.length === 0) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
+    tbody.innerHTML = ''; empty.style.display = 'block';
   } else {
     empty.style.display = 'none';
-    tbody.innerHTML = incs.map(i =>
-      `<tr><td>${i.camara}</td><td>${i.descripcion}</td><td>${i.tecnico}</td></tr>`
-    ).join('');
+    tbody.innerHTML = incs.map(i => {
+      const fecha = i.fecha ? i.fecha.toDate() : null;
+      const fechaStr = fecha ? fecha.toLocaleDateString('es-MX') : '—';
+      return `<tr><td>${i.camara}</td><td>${i.descripcion}</td><td>${i.tecnico}</td><td>${fechaStr}</td></tr>`;
+    }).join('');
   }
 }
 
+/* ═══════════ REPORTES ═══════════ */
+
+function getRango() {
+  const ahora = new Date();
+  let desde, hasta;
+  if (periodoActual === 'custom') {
+    const d = document.getElementById('fechaDesde').value;
+    const h = document.getElementById('fechaHasta').value;
+    desde = d ? new Date(d + 'T00:00:00') : null;
+    hasta = h ? new Date(h + 'T23:59:59') : null;
+    return { desde, hasta };
+  }
+  hasta = new Date(ahora);
+  hasta.setHours(23, 59, 59, 999);
+  if (periodoActual === 'dia') {
+    desde = new Date(ahora);
+    desde.setHours(0, 0, 0, 0);
+  } else if (periodoActual === 'semana') {
+    desde = new Date(ahora);
+    desde.setDate(desde.getDate() - desde.getDay());
+    desde.setHours(0, 0, 0, 0);
+  } else if (periodoActual === 'mes') {
+    desde = new Date(ahora.getFullYear(), ahora.getMonth(), 1, 0, 0, 0, 0);
+  }
+  return { desde, hasta };
+}
+
+function fmtKey(date) { return date.toISOString().slice(0, 10); }
+
+function dateRange(desde, hasta) {
+  const days = [];
+  const cur = new Date(desde); cur.setHours(0,0,0,0);
+  const end = new Date(hasta); end.setHours(0,0,0,0);
+  while (cur <= end) { days.push(fmtKey(cur)); cur.setDate(cur.getDate() + 1); }
+  return days;
+}
+
+function setPeriodo(p, btn) {
+  periodoActual = p;
+  document.querySelectorAll('.period-pill').forEach(el => el.classList.remove('active'));
+  btn.classList.add('active');
+  const labels = { dia: 'Día', semana: 'Semana', mes: 'Mes', custom: 'Personalizado' };
+  document.getElementById('reportePeriodoBadge').textContent = labels[p];
+  const cr = document.getElementById('customRange');
+  p === 'custom' ? cr.classList.add('visible') : cr.classList.remove('visible');
+  if (p !== 'custom') aplicarFiltro();
+}
+
+function aplicarFiltro() {
+  const { desde, hasta } = getRango();
+  const filtroSuc = document.getElementById('reporteSucursal').value;
+  const filtroTec = document.getElementById('reporteTecnico').value;
+  let filtradas = incidenciasCache.filter(i => {
+    if (!i.fecha) return false;
+    const d = i.fecha.toDate();
+    if (desde && d < desde) return false;
+    if (hasta && d > hasta) return false;
+    if (filtroSuc && i.sucursal !== filtroSuc) return false;
+    if (filtroTec && i.tecnico !== filtroTec) return false;
+    return true;
+  });
+  renderReporte(filtradas, desde, hasta);
+}
+
+function renderReporte(data, desde, hasta) {
+  const camarasSet    = new Set(data.map(i => i.camara));
+  const tecnicosSet   = new Set(data.map(i => i.tecnico));
+  const sucursalesSet = new Set(data.map(i => i.sucursal).filter(Boolean));
+  document.getElementById('rTotal').textContent      = data.length;
+  document.getElementById('rCamaras').textContent    = camarasSet.size;
+  document.getElementById('rTecnicos').textContent   = tecnicosSet.size;
+  document.getElementById('rSucursales').textContent = sucursalesSet.size;
+
+  const agrupado = {};
+  data.forEach(i => { const k = fmtKey(i.fecha.toDate()); agrupado[k] = (agrupado[k] || 0) + 1; });
+  let labels, valores;
+  if (desde && hasta) {
+    labels  = dateRange(desde, hasta);
+    valores = labels.map(d => agrupado[d] || 0);
+  } else {
+    labels  = Object.keys(agrupado).sort();
+    valores = labels.map(d => agrupado[d]);
+  }
+  if (chartReporte) chartReporte.destroy();
+  chartReporte = new Chart(document.getElementById('graficaReporte'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Incidencias', data: valores, backgroundColor: 'rgba(37,99,235,0.75)', borderRadius: 4, borderSkipped: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { color: '#f1f5f9' } }
+      }
+    }
+  });
+
+  const porSuc = {};
+  data.forEach(i => { const s = i.sucursal || 'Sin sucursal'; porSuc[s] = (porSuc[s] || 0) + 1; });
+  const maxSuc  = Math.max(...Object.values(porSuc), 1);
+  const entries = Object.entries(porSuc).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const branchEl = document.getElementById('reporteBranchBars');
+  branchEl.innerHTML = entries.length === 0
+    ? '<div class="empty">Sin datos en el periodo.</div>'
+    : entries.map(([nombre, count]) => {
+        const pct = Math.round((count / maxSuc) * 100);
+        return `<div class="branch-row">
+          <div class="branch-name">${nombre}</div>
+          <div class="bar-track"><div class="bar-ok" style="width:${pct}%;background:#2563eb;"></div></div>
+          <div class="branch-count">${count}</div>
+        </div>`;
+      }).join('');
+
+  const tbody   = document.getElementById('tablaReporte');
+  const emptyEl = document.getElementById('emptyReporte');
+  if (data.length === 0) {
+    tbody.innerHTML = ''; emptyEl.style.display = 'block';
+  } else {
+    emptyEl.style.display = 'none';
+    tbody.innerHTML = [...data].sort((a, b) => b.fecha.toDate() - a.fecha.toDate()).map((i, idx) => {
+      const d     = i.fecha.toDate();
+      const fecha = d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const hora  = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+      return `<tr>
+        <td style="color:#94a3b8;">${idx + 1}</td>
+        <td>${fecha}</td><td>${hora}</td>
+        <td><strong>${i.camara || '—'}</strong></td>
+        <td>${i.sucursal || '—'}</td>
+        <td>${i.tecnico || '—'}</td>
+        <td style="color:#64748b;">${i.descripcion || '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+function exportarCSV() {
+  const { desde, hasta } = getRango();
+  const filtroSuc = document.getElementById('reporteSucursal').value;
+  const filtroTec = document.getElementById('reporteTecnico').value;
+  let filtradas = incidenciasCache.filter(i => {
+    if (!i.fecha) return false;
+    const d = i.fecha.toDate();
+    if (desde && d < desde) return false;
+    if (hasta && d > hasta) return false;
+    if (filtroSuc && i.sucursal !== filtroSuc) return false;
+    if (filtroTec && i.tecnico !== filtroTec) return false;
+    return true;
+  });
+  if (filtradas.length === 0) { toast('Sin datos para exportar.'); return; }
+  const header = ['Fecha','Hora','Camara','Sucursal','Tecnico','Descripcion'];
+  const rows = filtradas.sort((a, b) => b.fecha.toDate() - a.fecha.toDate()).map(i => {
+    const d     = i.fecha.toDate();
+    const fecha = d.toLocaleDateString('es-MX');
+    const hora  = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    const esc   = v => `"${String(v || '').replace(/"/g, '""')}"`;
+    return [fecha, hora, i.camara, i.sucursal, i.tecnico, i.descripcion].map(esc).join(',');
+  });
+  const csv  = [header.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `incidencias_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ CSV descargado.');
+}
+
+/* ═══════════ FIRESTORE LISTENERS ═══════════ */
 db.collection('camaras').onSnapshot(snapshot => {
   camarasCache = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
   renderDashboardGeneral(camarasCache);
@@ -694,7 +1040,14 @@ db.collection('camaras').onSnapshot(snapshot => {
 });
 
 db.collection('incidencias').onSnapshot(snapshot => {
-  renderIncidencias(snapshot.docs.map(d => d.data()));
+  incidenciasCache = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderIncidencias(incidenciasCache);
+  const tecnicos  = [...new Set(incidenciasCache.map(i => i.tecnico).filter(Boolean))].sort();
+  const selTec    = document.getElementById('reporteTecnico');
+  const valActual = selTec.value;
+  selTec.innerHTML = '<option value="">Todos los técnicos</option>' +
+    tecnicos.map(t => `<option${t === valActual ? ' selected' : ''}>${t}</option>`).join('');
+  if (document.getElementById('reportes').classList.contains('visible')) aplicarFiltro();
 });
 </script>
 </body>
