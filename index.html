@@ -539,7 +539,9 @@ function addInc() {
     fechaCierre: null
   })
   .then(()=>{
-    toast('Incidencia registrada.');
+    // Cambiar cámara a Falla automáticamente
+    if (camId) db.collection('camaras').doc(camId).update({ estado: 'Falla' });
+    toast('Incidencia registrada. Cámara marcada como Falla.');
     document.getElementById('desc').value='';
     document.getElementById('tecnico').value='';
   })
