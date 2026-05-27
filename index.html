@@ -172,6 +172,17 @@
   .tecnico-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
   .tecnico-name { width: 130px; color: #64748b; font-size: 12px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tecnico-time { font-weight: 500; color: #1e293b; font-size: 12px; min-width: 60px; text-align: right; }
+
+  /* ── HISTÓRICO ── */
+  .hist-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
+  .hist-tab { padding: 8px 18px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; }
+  .hist-tab:hover { color: #2563eb; }
+  .hist-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+  .hist-panel { display: none; }
+  .hist-panel.active { display: block; }
+  .hist-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; background: white; border-radius: 12px; padding: 14px 18px; border: .5px solid rgba(0,0,0,.08); margin-bottom: 16px; }
+  .hist-filters .form-group { min-width: 140px; }
+  .hist-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle; background: #eff6ff; color: #2563eb; }
 </style>
 </head>
 <body>
@@ -184,6 +195,7 @@
     <button onclick="mostrar('base',this)">Base cámaras</button>
     <button onclick="mostrar('incidencias',this)">Incidencias</button>
     <button onclick="mostrar('reportes',this)">Reportes</button>
+    <button onclick="mostrar('historico',this)">Histórico</button>
   </nav>
 </div>
 
@@ -453,6 +465,102 @@
     </div>
   </div>
 
+  <!-- HISTÓRICO -->
+  <div id="historico" class="section">
+    <div class="page-header"><h2>Histórico</h2></div>
+
+    <div class="hist-tabs">
+      <button class="hist-tab active" onclick="switchHistTab('incidencias',this)">Incidencias resueltas <span class="hist-badge" id="badgeResueltas">0</span></button>
+      <button class="hist-tab" onclick="switchHistTab('camaras',this)">Cambios de estado de cámaras <span class="hist-badge" id="badgeCambios">0</span></button>
+    </div>
+
+    <!-- Tab: Incidencias resueltas -->
+    <div id="histPanelIncidencias" class="hist-panel active">
+      <div class="hist-filters">
+        <div class="form-group" style="min-width:180px">
+          <label>Sucursal</label>
+          <select id="histFiltroSuc" onchange="renderHistIncidencias()">
+            <option value="">Todas</option>
+            <option>Corporativo</option><option>Cedis</option><option>Hidalgo</option>
+            <option>Construcasa</option><option>Ferrocarril</option><option>Simbolos</option>
+            <option>Santa Rosa</option><option>Atzompa</option><option>Viguera</option>
+            <option>Reforma</option><option>Tehuantepec</option><option>Puerto Escondido</option>
+          </select>
+        </div>
+        <div class="form-group" style="min-width:160px">
+          <label>Técnico</label>
+          <select id="histFiltroTec" onchange="renderHistIncidencias()"><option value="">Todos</option></select>
+        </div>
+        <div class="form-group">
+          <label>Desde</label>
+          <input type="date" id="histDesde" onchange="renderHistIncidencias()">
+        </div>
+        <div class="form-group">
+          <label>Hasta</label>
+          <input type="date" id="histHasta" onchange="renderHistIncidencias()">
+        </div>
+        <div class="form-group" style="min-width:120px">
+          <label>Búsqueda</label>
+          <input type="text" id="histBusqueda" placeholder="Cámara, técnico…" oninput="renderHistIncidencias()">
+        </div>
+        <button class="btn btn-export" style="align-self:flex-end" onclick="exportarHistCSV()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Exportar CSV
+        </button>
+      </div>
+      <div class="card">
+        <div class="card-title">Incidencias resueltas</div>
+        <div class="table-wrap">
+          <table class="report-table">
+            <thead><tr><th>#</th><th>Fecha apertura</th><th>Fecha cierre</th><th>Cámara</th><th>Sucursal</th><th>Técnico</th><th>Tiempo resolución</th><th>Descripción</th><th>Bitácora</th></tr></thead>
+            <tbody id="tablaHistInc"></tbody>
+          </table>
+          <div id="emptyHistInc" class="empty" style="display:none">Sin incidencias resueltas con los filtros aplicados.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Cambios de estado cámaras -->
+    <div id="histPanelCamaras" class="hist-panel">
+      <div class="hist-filters">
+        <div class="form-group" style="min-width:180px">
+          <label>Sucursal</label>
+          <select id="histCamSuc" onchange="renderHistCamaras()">
+            <option value="">Todas</option>
+            <option>Corporativo</option><option>Cedis</option><option>Hidalgo</option>
+            <option>Construcasa</option><option>Ferrocarril</option><option>Simbolos</option>
+            <option>Santa Rosa</option><option>Atzompa</option><option>Viguera</option>
+            <option>Reforma</option><option>Tehuantepec</option><option>Puerto Escondido</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Desde</label>
+          <input type="date" id="histCamDesde" onchange="renderHistCamaras()">
+        </div>
+        <div class="form-group">
+          <label>Hasta</label>
+          <input type="date" id="histCamHasta" onchange="renderHistCamaras()">
+        </div>
+        <div class="form-group" style="min-width:120px">
+          <label>Búsqueda</label>
+          <input type="text" id="histCamBusqueda" placeholder="Nombre de cámara…" oninput="renderHistCamaras()">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cambios de estado de cámaras</div>
+        <div class="table-wrap">
+          <table class="report-table">
+            <thead><tr><th>#</th><th>Fecha</th><th>Hora</th><th>Cámara</th><th>Sucursal</th><th>De</th><th>A</th><th>Motivo</th></tr></thead>
+            <tbody id="tablaHistCam"></tbody>
+          </table>
+          <div id="emptyHistCam" class="empty" style="display:none">Sin cambios de estado registrados con los filtros aplicados.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- MODAL BITÁCORA -->
@@ -513,6 +621,7 @@ function mostrar(sec, btn) {
   document.getElementById(sec).classList.add('visible');
   if (btn) btn.classList.add('active');
   if (sec === 'reportes') aplicarFiltro();
+  if (sec === 'historico') { renderHistIncidencias(); renderHistCamaras(); }
 }
 function chipInc(estado) {
   const map = { abierta:'chip-abierta','en proceso':'chip-proceso',resuelta:'chip-resuelta' };
@@ -598,7 +707,12 @@ function addInc() {
     descripcion:desc, tecnico:tec, estado:'abierta',
     fecha:firebase.firestore.FieldValue.serverTimestamp(), fechaCierre:null
   }).then(()=>{
-    if (camId) db.collection('camaras').doc(camId).update({estado:'Falla'});
+    if (camId) {
+      const camObj = camarasCache.find(c => c.id === camId);
+      const estadoPrev = camObj ? camObj.estado : 'Activa';
+      db.collection('camaras').doc(camId).update({estado:'Falla'});
+      registrarCambioCamara(camId, camNom, suc, estadoPrev, 'Falla', 'Incidencia registrada: ' + desc);
+    }
     toast('Incidencia registrada. Cámara marcada como Falla.');
     document.getElementById('desc').value=''; document.getElementById('tecnico').value='';
   }).catch(()=>toast('Error al guardar incidencia.'));
@@ -609,7 +723,11 @@ function avanzarEstado(id, estadoActual, camaraId) {
   const upd={estado:siguiente};
   if (siguiente==='resuelta') {
     upd.fechaCierre=firebase.firestore.FieldValue.serverTimestamp();
-    if (camaraId) db.collection('camaras').doc(camaraId).update({estado:'Activa'});
+    if (camaraId) {
+      const camObj = camarasCache.find(c => c.id === camaraId);
+      db.collection('camaras').doc(camaraId).update({estado:'Activa'});
+      registrarCambioCamara(camaraId, camObj ? camObj.nombre : camaraId, camObj ? camObj.sucursal : '', 'Falla', 'Activa', 'Incidencia resuelta');
+    }
   }
   // Agregar entrada automática a la bitácora
   const msg = siguiente==='en proceso' ? '🔧 Incidencia iniciada / en proceso' : '✅ Incidencia marcada como resuelta';
@@ -944,6 +1062,147 @@ function exportarCSV(){
   toast('✓ CSV descargado.');
 }
 
+
+/* ── HISTÓRICO ── */
+let histCambiosCache = [];
+
+function switchHistTab(tab, btn) {
+  document.querySelectorAll('.hist-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.hist-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('histPanel' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+}
+
+function histFiltrarInc() {
+  const fSuc  = document.getElementById('histFiltroSuc').value;
+  const fTec  = document.getElementById('histFiltroTec').value;
+  const fDes  = document.getElementById('histDesde').value;
+  const fHas  = document.getElementById('histHasta').value;
+  const fBus  = document.getElementById('histBusqueda').value.toLowerCase();
+  const desde = fDes ? new Date(fDes + 'T00:00:00') : null;
+  const hasta = fHas ? new Date(fHas + 'T23:59:59') : null;
+
+  return incidenciasCache.filter(i => {
+    if ((i.estado || 'abierta') !== 'resuelta') return false;
+    if (fSuc && i.sucursal !== fSuc) return false;
+    if (fTec && i.tecnico !== fTec) return false;
+    if (i.fechaCierre) {
+      const fc = i.fechaCierre.toDate();
+      if (desde && fc < desde) return false;
+      if (hasta && fc > hasta) return false;
+    }
+    if (fBus && !((i.camara||'').toLowerCase().includes(fBus) || (i.tecnico||'').toLowerCase().includes(fBus) || (i.descripcion||'').toLowerCase().includes(fBus))) return false;
+    return true;
+  });
+}
+
+function renderHistIncidencias() {
+  const data = histFiltrarInc().sort((a,b) => {
+    const da = a.fechaCierre ? a.fechaCierre.toDate() : new Date(0);
+    const db2 = b.fechaCierre ? b.fechaCierre.toDate() : new Date(0);
+    return db2 - da;
+  });
+  document.getElementById('badgeResueltas').textContent = data.length;
+  const tbody = document.getElementById('tablaHistInc');
+  const empty = document.getElementById('emptyHistInc');
+  if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = data.map((i, idx) => {
+    const fa  = i.fecha ? i.fecha.toDate().toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+    const fc  = i.fechaCierre ? i.fechaCierre.toDate().toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+    const hc  = i.fechaCierre ? i.fechaCierre.toDate().toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'}) : '';
+    const tiempo = calcTiempo(i.fecha, i.fechaCierre);
+    return `<tr>
+      <td style="color:#94a3b8">${idx+1}</td>
+      <td>${fa}</td>
+      <td>${fc}${hc?' <span style="color:#94a3b8;font-size:11px">'+hc+'</span>':''}</td>
+      <td><strong>${i.camara||'—'}</strong></td>
+      <td>${i.sucursal||'—'}</td>
+      <td>${i.tecnico||'—'}</td>
+      <td><span style="font-weight:500;color:#16a34a">${tiempo||'—'}</span></td>
+      <td style="color:#64748b;max-width:200px">${i.descripcion||'—'}</td>
+      <td>${btnBitacora(i.id, i.camara||'')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportarHistCSV() {
+  const data = histFiltrarInc();
+  if (!data.length) { toast('Sin datos para exportar.'); return; }
+  const header = ['FechaApertura','FechaCierre','Camara','Sucursal','Tecnico','TiempoResolucion','Descripcion'];
+  const rows = data.map(i => {
+    const fa = i.fecha ? i.fecha.toDate().toLocaleDateString('es-MX') : '—';
+    const fc = i.fechaCierre ? i.fechaCierre.toDate().toLocaleDateString('es-MX') : '—';
+    const t  = calcTiempo(i.fecha, i.fechaCierre) || '—';
+    const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
+    return [fa, fc, i.camara, i.sucursal, i.tecnico, t, i.descripcion].map(esc).join(',');
+  });
+  const csv  = [header.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `historico_incidencias_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  toast('✓ CSV descargado.');
+}
+
+/* Registrar cambio de estado de cámara */
+function registrarCambioCamara(camaraId, nombre, sucursal, estadoAnterior, estadoNuevo, motivo) {
+  db.collection('historial_camaras').add({
+    camaraId, nombre, sucursal,
+    de: estadoAnterior, a: estadoNuevo, motivo: motivo || '',
+    fecha: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+function renderHistCamaras() {
+  const fSuc = document.getElementById('histCamSuc').value;
+  const fDes = document.getElementById('histCamDesde').value;
+  const fHas = document.getElementById('histCamHasta').value;
+  const fBus = document.getElementById('histCamBusqueda').value.toLowerCase();
+  const desde = fDes ? new Date(fDes + 'T00:00:00') : null;
+  const hasta = fHas ? new Date(fHas + 'T23:59:59') : null;
+
+  const data = histCambiosCache.filter(c => {
+    if (fSuc && c.sucursal !== fSuc) return false;
+    if (c.fecha) {
+      const fd = c.fecha.toDate();
+      if (desde && fd < desde) return false;
+      if (hasta && fd > hasta) return false;
+    }
+    if (fBus && !(c.nombre||'').toLowerCase().includes(fBus)) return false;
+    return true;
+  }).sort((a,b) => {
+    const da = a.fecha ? a.fecha.toDate() : new Date(0);
+    const db2 = b.fecha ? b.fecha.toDate() : new Date(0);
+    return db2 - da;
+  });
+
+  document.getElementById('badgeCambios').textContent = data.length;
+  const tbody = document.getElementById('tablaHistCam');
+  const empty = document.getElementById('emptyHistCam');
+  if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const chipEstado = e => {
+    if (e === 'Activa') return `<span class="estado-chip chip-activa">Activa</span>`;
+    return `<span class="estado-chip chip-falla">${e}</span>`;
+  };
+
+  tbody.innerHTML = data.map((c, idx) => {
+    const fd   = c.fecha ? c.fecha.toDate() : null;
+    const fecha = fd ? fd.toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+    const hora  = fd ? fd.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'}) : '—';
+    return `<tr>
+      <td style="color:#94a3b8">${idx+1}</td>
+      <td>${fecha}</td><td>${hora}</td>
+      <td><strong>${c.nombre||'—'}</strong></td>
+      <td>${c.sucursal||'—'}</td>
+      <td>${chipEstado(c.de||'—')}</td>
+      <td>${chipEstado(c.a||'—')}</td>
+      <td style="color:#64748b;font-size:12px">${c.motivo||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
 /* ── Firestore listeners ── */
 db.collection('camaras').onSnapshot(snap=>{
   camarasCache=snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -959,7 +1218,17 @@ db.collection('incidencias').onSnapshot(snap=>{
   const tecs=[...new Set(incidenciasCache.map(i=>i.tecnico).filter(Boolean))].sort();
   const sel=document.getElementById('reporteTecnico'),val=sel.value;
   sel.innerHTML='<option value="">Todos</option>'+tecs.map(t=>`<option${t===val?' selected':''}>${t}</option>`).join('');
+  // Also update historico tecnico filter
+  const selH=document.getElementById('histFiltroTec'),valH=selH.value;
+  selH.innerHTML='<option value="">Todos</option>'+tecs.map(t=>`<option${t===valH?' selected':''}>${t}</option>`).join('');
   if(document.getElementById('reportes').classList.contains('visible'))aplicarFiltro();
+  if(document.getElementById('historico').classList.contains('visible')){ renderHistIncidencias(); }
+});
+
+db.collection('historial_camaras').orderBy('fecha','desc').onSnapshot(snap=>{
+  histCambiosCache = snap.docs.map(d=>({id:d.id,...d.data()}));
+  if(document.getElementById('historico').classList.contains('visible')) renderHistCamaras();
+  document.getElementById('badgeCambios').textContent = histCambiosCache.length;
 });
 </script>
 </body>
