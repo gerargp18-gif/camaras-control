@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema Cámaras PRO</title>
+<title>Sistema de Cámaras</title>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -230,6 +230,36 @@
   .equipo-type-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
   .badge-dvr { background: #ede9fe; color: #6d28d9; }
   .badge-cam { background: #dcfce7; color: #166534; }
+
+  /* ── SELECTOR EQUIPO EN INCIDENCIAS ── */
+  .inc-tipo-selector { display: flex; gap: 8px; margin-bottom: 14px; }
+  .inc-tipo-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: white; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; transition: all .15s; text-align: center; }
+  .inc-tipo-btn:hover { border-color: #4a90d9; color: #2563eb; background: #eff6ff; }
+  .inc-tipo-btn.active { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+  .inc-tipo-btn .itb-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+  .inc-tipo-btn .itb-count { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .inc-tipo-btn.active .itb-count { color: #2563eb; }
+  .inc-equipo-step { display: none; }
+  .inc-equipo-step.visible { display: block; }
+  .inc-dvr-list { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+  .inc-dvr-item { border: 1.5px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+  .inc-dvr-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f8fafc; cursor: pointer; font-size: 13px; font-weight: 500; color: #334155; user-select: none; }
+  .inc-dvr-header:hover { background: #eff6ff; }
+  .inc-dvr-header .dvr-ch-count { font-size: 11px; color: #94a3b8; font-weight: 400; }
+  .inc-dvr-channels { display: none; flex-wrap: wrap; gap: 6px; padding: 10px 14px; border-top: 1px solid #f1f5f9; }
+  .inc-dvr-channels.open { display: flex; }
+  .inc-ch-btn { font-size: 12px; padding: 4px 12px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; color: #334155; cursor: pointer; transition: all .12s; font-weight: 500; }
+  .inc-ch-btn:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+  .inc-ch-btn.selected { background: #2563eb; border-color: #2563eb; color: white; }
+  .inc-cam-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; max-height: 260px; overflow-y: auto; }
+  .inc-cam-btn { padding: 8px 12px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: white; font-size: 12px; font-weight: 500; color: #334155; cursor: pointer; transition: all .12s; text-align: left; }
+  .inc-cam-btn:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+  .inc-cam-btn.selected { background: #2563eb; border-color: #2563eb; color: white; }
+  .inc-cam-btn .cam-suc { font-size: 10px; opacity: .7; display: block; margin-top: 2px; }
+  .inc-selected-equipo { display: flex; align-items: center; gap: 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 8px 14px; margin-bottom: 10px; font-size: 13px; font-weight: 500; color: #1e40af; }
+  .inc-selected-equipo .clear-sel { margin-left: auto; font-size: 18px; cursor: pointer; color: #94a3b8; background: none; border: none; line-height: 1; }
+  .inc-selected-equipo .clear-sel:hover { color: #dc2626; }
+  .inc-no-equipo { text-align: center; padding: 20px; color: #94a3b8; font-size: 13px; background: #f8fafc; border-radius: 8px; border: 1px dashed #e2e8f0; }
 </style>
 </head>
 <body>
@@ -389,10 +419,12 @@
     <div class="page-header"><h2>Incidencias</h2></div>
     <div class="card">
       <div class="card-title">Registrar incidencia</div>
-      <div class="form-grid">
+
+      <!-- Paso 1: Sucursal -->
+      <div class="form-grid" style="margin-bottom:14px">
         <div class="form-group">
           <label>Sucursal</label>
-          <select id="incSucursal" onchange="filtrarCamarasPorSucursal()">
+          <select id="incSucursal" onchange="onIncSucursalChange()">
             <option value="">Selecciona sucursal</option>
             <option>Corporativo</option><option>Cedis</option><option>Hidalgo</option>
             <option>Construcasa</option><option>Ferrocarril</option><option>Simbolos</option>
@@ -400,11 +432,57 @@
             <option>Reforma</option><option>Tehuantepec</option><option>Puerto Escondido</option>
           </select>
         </div>
-        <div class="form-group"><label>Cámara</label><select id="camaraSelect"><option value="">Selecciona sucursal primero</option></select></div>
-        <div class="form-group"><label>Técnico responsable</label><input id="tecnico" placeholder="Nombre del técnico"></div>
-        <div class="form-group" style="grid-column:span 2"><label>Descripción del problema</label><input id="desc" placeholder="Describe el problema detalladamente"></div>
       </div>
-      <button class="btn btn-primary" onclick="addInc()">Registrar incidencia</button>
+
+      <!-- Paso 2: Tipo de equipo -->
+      <div id="incTipoStep" class="inc-equipo-step">
+        <div style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:500">Tipo de equipo con falla</div>
+        <div class="inc-tipo-selector">
+          <button class="inc-tipo-btn" id="incBtnCam" onclick="setIncTipo('camara')">
+            <span class="itb-icon">📷</span>
+            Cámara individual
+            <div class="itb-count" id="incCountCam">0 en esta sucursal</div>
+          </button>
+          <button class="inc-tipo-btn" id="incBtnDVR" onclick="setIncTipo('dvr')">
+            <span class="itb-icon">📼</span>
+            DVR / Canal
+            <div class="itb-count" id="incCountDVR">0 DVRs en esta sucursal</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Paso 3a: Selector cámaras individuales -->
+      <div id="incCamStep" class="inc-equipo-step">
+        <div style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:500">Selecciona la cámara</div>
+        <div class="inc-cam-list" id="incCamList"></div>
+      </div>
+
+      <!-- Paso 3b: Selector DVR / canales -->
+      <div id="incDVRStep" class="inc-equipo-step">
+        <div style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:500">Selecciona el DVR y el canal</div>
+        <div class="inc-dvr-list" id="incDVRList"></div>
+      </div>
+
+      <!-- Equipo seleccionado -->
+      <div id="incEquipoSeleccionado" style="display:none;margin-top:10px">
+        <div class="inc-selected-equipo">
+          <span id="incEquipoLabel">—</span>
+          <button class="clear-sel" onclick="clearIncEquipo()" title="Cambiar equipo">×</button>
+        </div>
+      </div>
+
+      <!-- Campos restantes -->
+      <div id="incRestoForm" style="display:none">
+        <div class="form-grid" style="margin-top:4px">
+          <div class="form-group"><label>Técnico responsable</label><input id="tecnico" placeholder="Nombre del técnico"></div>
+          <div class="form-group" style="grid-column:span 2"><label>Descripción del problema</label><input id="desc" placeholder="Describe el problema detalladamente"></div>
+        </div>
+        <button class="btn btn-primary" onclick="addInc()">Registrar incidencia</button>
+      </div>
+
+      <!-- Hidden fields para compatibilidad con addInc() -->
+      <input type="hidden" id="incCamaraId">
+      <input type="hidden" id="incCamaraNombre">
     </div>
     <div class="card">
       <div class="card-title">Historial de incidencias</div>
@@ -832,21 +910,117 @@ function eliminar(id) {
 
 /* ── filtrar cámaras ── */
 function filtrarCamarasPorSucursal() {
-  const suc=document.getElementById('incSucursal').value;
-  const sel=document.getElementById('camaraSelect');
-  const f=suc?camarasCache.filter(c=>c.sucursal===suc):[];
-  sel.innerHTML=f.length?f.map(c=>`<option value="${c.id}" data-nombre="${c.nombre}">${c.nombre}</option>`).join(''):'<option value="">Sin cámaras en esta sucursal</option>';
+  // Legacy: kept for renderTablaCamaras compatibility
+}
+
+/* ── Selector de equipo en incidencias ── */
+function onIncSucursalChange() {
+  const suc = document.getElementById('incSucursal').value;
+  clearIncEquipo();
+  // Hide all steps
+  ['incTipoStep','incCamStep','incDVRStep'].forEach(id => document.getElementById(id).classList.remove('visible'));
+  document.getElementById('incBtnCam').classList.remove('active');
+  document.getElementById('incBtnDVR').classList.remove('active');
+  if (!suc) return;
+  // Count cameras and DVRs
+  const cams = camarasCache.filter(c => c.sucursal === suc && !c.esDVR);
+  const dvrs = [...new Set(camarasCache.filter(c => c.sucursal === suc && c.esDVR).map(c => c.dvr))];
+  document.getElementById('incCountCam').textContent = `${cams.length} cámara(s)`;
+  document.getElementById('incCountDVR').textContent = `${dvrs.length} DVR(s)`;
+  document.getElementById('incTipoStep').classList.add('visible');
+}
+
+function setIncTipo(tipo) {
+  document.getElementById('incBtnCam').classList.toggle('active', tipo==='camara');
+  document.getElementById('incBtnDVR').classList.toggle('active', tipo==='dvr');
+  document.getElementById('incCamStep').classList.remove('visible');
+  document.getElementById('incDVRStep').classList.remove('visible');
+  clearIncEquipo();
+  const suc = document.getElementById('incSucursal').value;
+
+  if (tipo === 'camara') {
+    const cams = camarasCache.filter(c => c.sucursal === suc && !c.esDVR);
+    const list = document.getElementById('incCamList');
+    if (!cams.length) {
+      list.innerHTML = '<div class="inc-no-equipo">Sin cámaras individuales en esta sucursal.</div>';
+    } else {
+      list.innerHTML = cams.map(c => `
+        <button class="inc-cam-btn ${c.estado==='Falla'?'':''}"
+          onclick="selectIncEquipo('${c.id}','${c.nombre.replace(/'/g,"\\'")}','${c.estado}',this)">
+          ${c.nombre}
+          ${c.estado==='Falla'?'<span style="color:#ef4444;font-size:10px;display:block">⚠ En falla</span>':''}
+        </button>`).join('');
+    }
+    document.getElementById('incCamStep').classList.add('visible');
+  } else {
+    const suc = document.getElementById('incSucursal').value;
+    const dvrItems = camarasCache.filter(c => c.sucursal === suc && c.esDVR);
+    const dvrGroups = {};
+    dvrItems.forEach(c => {
+      if (!dvrGroups[c.dvr]) dvrGroups[c.dvr] = [];
+      dvrGroups[c.dvr].push(c);
+    });
+    const list = document.getElementById('incDVRList');
+    if (!Object.keys(dvrGroups).length) {
+      list.innerHTML = '<div class="inc-no-equipo">Sin DVRs registrados en esta sucursal.</div>';
+    } else {
+      list.innerHTML = Object.entries(dvrGroups).map(([dvrName, channels]) => `
+        <div class="inc-dvr-item">
+          <div class="inc-dvr-header" onclick="toggleDVR(this)">
+            📼 ${dvrName}
+            <span class="dvr-ch-count">${channels.length} canal(es) ▾</span>
+          </div>
+          <div class="inc-dvr-channels">
+            ${channels.sort((a,b)=>a.canal.localeCompare(b.canal)).map(c=>`
+              <button class="inc-ch-btn ${c.estado==='Falla'?'style="border-color:#fca5a5;color:#dc2626"':''}"
+                onclick="selectIncEquipo('${c.id}','${c.nombre.replace(/'/g,"\\'")}','${c.estado}',this)">
+                ${c.canal}
+                ${c.estado==='Falla'?'⚠':''}
+              </button>`).join('')}
+          </div>
+        </div>`).join('');
+    }
+    document.getElementById('incDVRStep').classList.add('visible');
+  }
+}
+
+function toggleDVR(header) {
+  const channels = header.nextElementSibling;
+  channels.classList.toggle('open');
+  const arrow = header.querySelector('.dvr-ch-count');
+  arrow.textContent = arrow.textContent.includes('▾')
+    ? arrow.textContent.replace('▾','▴')
+    : arrow.textContent.replace('▴','▾');
+}
+
+function selectIncEquipo(id, nombre, estado, btn) {
+  // Deselect all
+  document.querySelectorAll('.inc-cam-btn, .inc-ch-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('incCamaraId').value = id;
+  document.getElementById('incCamaraNombre').value = nombre;
+  // Show selected label
+  document.getElementById('incEquipoLabel').innerHTML = `📷 <strong>${nombre}</strong>${estado==='Falla'?' <span style="color:#ef4444;font-size:11px">⚠ ya en falla</span>':''}`;
+  document.getElementById('incEquipoSeleccionado').style.display = 'block';
+  document.getElementById('incRestoForm').style.display = 'block';
+}
+
+function clearIncEquipo() {
+  document.getElementById('incCamaraId').value = '';
+  document.getElementById('incCamaraNombre').value = '';
+  document.getElementById('incEquipoSeleccionado').style.display = 'none';
+  document.getElementById('incRestoForm').style.display = 'none';
+  document.querySelectorAll('.inc-cam-btn, .inc-ch-btn').forEach(b => b.classList.remove('selected'));
 }
 
 /* ── incidencias ── */
 function addInc() {
   const suc=document.getElementById('incSucursal').value;
-  const camOpt=document.getElementById('camaraSelect');
-  const camId=camOpt.value;
-  const camNom=camOpt.options[camOpt.selectedIndex]?.dataset.nombre||camOpt.options[camOpt.selectedIndex]?.text||'';
+  const camId=document.getElementById('incCamaraId').value;
+  const camNom=document.getElementById('incCamaraNombre').value;
   const desc=document.getElementById('desc').value.trim();
   const tec=document.getElementById('tecnico').value.trim();
-  if (!suc||!camId||!desc||!tec) { toast('⚠ Completa todos los campos.'); return; }
+  if (!suc||!camId||!desc||!tec) { toast('⚠ Selecciona sucursal, equipo, técnico y descripción.'); return; }
   db.collection('incidencias').add({
     camara:camNom, camaraId:camId, sucursal:suc,
     descripcion:desc, tecnico:tec, estado:'abierta',
@@ -860,6 +1034,8 @@ function addInc() {
     }
     toast('Incidencia registrada. Cámara marcada como Falla.');
     document.getElementById('desc').value=''; document.getElementById('tecnico').value='';
+    clearIncEquipo();
+    onIncSucursalChange();
   }).catch(()=>toast('Error al guardar incidencia.'));
 }
 
