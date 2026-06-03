@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Cámaras</title>
+<title>Sistema Cámaras PRO</title>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -183,6 +183,53 @@
   .hist-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; background: white; border-radius: 12px; padding: 14px 18px; border: .5px solid rgba(0,0,0,.08); margin-bottom: 16px; }
   .hist-filters .form-group { min-width: 140px; }
   .hist-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle; background: #eff6ff; color: #2563eb; }
+
+  /* ── ALERTAS ── */
+  .alertas-panel { margin-bottom: 20px; }
+  .alerta-section { margin-bottom: 14px; }
+  .alerta-section-title { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .alerta-count { display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; border-radius: 20px; padding: 1px 8px; }
+  .alerta-count.red    { background: #fee2e2; color: #991b1b; }
+  .alerta-count.yellow { background: #fef9c3; color: #854d0e; }
+  .alerta-count.blue   { background: #eff6ff; color: #1e40af; }
+  .alerta-items { display: flex; flex-direction: column; gap: 7px; }
+  .alerta-item { display: flex; align-items: center; gap: 12px; background: white; border-radius: 8px; padding: 10px 14px; border: 0.5px solid rgba(0,0,0,.07); font-size: 13px; }
+  .alerta-item.red    { border-left: 3px solid #dc2626; }
+  .alerta-item.yellow { border-left: 3px solid #d97706; }
+  .alerta-item.blue   { border-left: 3px solid #2563eb; }
+  .alerta-icon { font-size: 16px; flex-shrink: 0; }
+  .alerta-body { flex: 1; }
+  .alerta-title { font-weight: 500; color: #1e293b; }
+  .alerta-sub   { font-size: 12px; color: #94a3b8; margin-top: 1px; }
+  .alerta-dias  { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; flex-shrink: 0; }
+  .alerta-dias.red    { background: #fee2e2; color: #991b1b; }
+  .alerta-dias.yellow { background: #fef9c3; color: #854d0e; }
+  .alerta-dias.blue   { background: #eff6ff; color: #1e40af; }
+  .alertas-empty { text-align: center; padding: 20px; color: #94a3b8; font-size: 13px; background: white; border-radius: 10px; border: 0.5px solid rgba(0,0,0,.07); }
+  .alertas-config { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #94a3b8; margin-bottom: 14px; }
+  .alertas-config span { font-weight: 500; color: #64748b; }
+  /* Badge alertas en sidebar */
+  .sidebar-badge { display: inline-flex; align-items: center; justify-content: center; background: #dc2626; color: white; font-size: 10px; font-weight: 700; border-radius: 20px; padding: 1px 6px; margin-left: 6px; min-width: 18px; }
+  /* Pulso en dashboard */
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+  .alert-pulse { animation: pulse 2s infinite; }
+
+  /* ── DVR / TIPO EQUIPO ── */
+  .tipo-equipo-pills { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tipo-pill { padding: 5px 16px; border-radius: 20px; border: 1px solid #e2e8f0; background: white; font-size: 12px; font-weight: 500; color: #64748b; cursor: pointer; transition: all .15s; }
+  .tipo-pill:hover { border-color: #4a90d9; color: #4a90d9; }
+  .tipo-pill.active { background: #2563eb; border-color: #2563eb; color: white; }
+  .dvr-fields { display: none; }
+  .dvr-fields.visible { display: contents; }
+  .cam-fields { display: none; }
+  .cam-fields.visible { display: contents; }
+  .dvr-preview { background: #f8fafc; border-radius: 8px; padding: 12px 14px; margin-top: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0; }
+  .dvr-preview-title { font-size: 12px; color: #64748b; margin-bottom: 8px; font-weight: 500; }
+  .dvr-channels { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dvr-ch { font-size: 11px; background: #eff6ff; color: #2563eb; border-radius: 4px; padding: 2px 8px; font-weight: 500; }
+  .equipo-type-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+  .badge-dvr { background: #ede9fe; color: #6d28d9; }
+  .badge-cam { background: #dcfce7; color: #166534; }
 </style>
 </head>
 <body>
@@ -196,6 +243,7 @@
     <button onclick="mostrar('incidencias',this)">Incidencias</button>
     <button onclick="mostrar('reportes',this)">Reportes</button>
     <button onclick="mostrar('historico',this)">Histórico</button>
+    <button onclick="mostrar('alertas',this)">Alertas <span class="sidebar-badge" id="sidebarAlertaBadge">0</span></button>
   </nav>
 </div>
 
@@ -210,6 +258,20 @@
       <div class="metric"><div class="metric-label">Fallas</div><div class="metric-value fail" id="fallasGeneral">—</div><div class="metric-sub" id="pctFallas">—</div></div>
       <div class="metric"><div class="metric-label">Estado general</div><div style="margin-top:8px" id="estadoGeneral"><span class="badge badge-ok">Cargando…</span></div><div class="metric-sub" id="estadoSub"></div></div>
     </div>
+    <!-- ALERTAS WIDGET DASHBOARD -->
+    <div id="dashAlertasWrap" style="display:none;margin-bottom:16px">
+      <div class="card" style="border-left:3px solid #dc2626">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="card-title" style="margin-bottom:0;display:flex;align-items:center;gap:8px">
+            <span class="alert-pulse">🚨</span> Alertas activas
+            <span class="alerta-count red" id="dashAlertaTotal">0</span>
+          </div>
+          <button class="btn btn-sm btn-gray" onclick="mostrar('alertas',document.querySelector('.sidebar nav button:nth-child(6)'))">Ver todas</button>
+        </div>
+        <div id="dashAlertasList"></div>
+      </div>
+    </div>
+
     <div class="two-col">
       <div class="card">
         <div class="card-title">Distribución de estado</div>
@@ -280,7 +342,11 @@
   <div id="base" class="section">
     <div class="page-header"><h2>Base de cámaras</h2></div>
     <div class="card">
-      <div class="card-title" id="formTitle">Agregar cámara</div>
+      <div class="card-title" id="formTitle">Agregar equipo</div>
+      <div class="tipo-equipo-pills">
+        <button class="tipo-pill active" id="pillCamara" onclick="setTipoEquipo('camara')">📷 Cámara individual</button>
+        <button class="tipo-pill" id="pillDVR" onclick="setTipoEquipo('dvr')">📼 DVR</button>
+      </div>
       <div class="form-grid">
         <div class="form-group">
           <label>Sucursal</label>
@@ -292,13 +358,20 @@
             <option>Reforma</option><option>Tehuantepec</option><option>Puerto Escondido</option>
           </select>
         </div>
-        <div class="form-group"><label>Nombre de cámara</label><input id="nombre" placeholder="Ej. CAM-01"></div>
-        <div class="form-group"><label>Marca</label><input id="marca" placeholder="Ej. Hikvision"></div>
-        <div class="form-group"><label>Tipo</label><input id="tipo" placeholder="Ej. Domo, Bala, PTZ"></div>
-        <div class="form-group"><label>Estado</label><select id="estado"><option>Activa</option><option>Falla</option></select></div>
+        <div class="form-group"><label>Marca</label><input id="marca" placeholder="Ej. Hikvision, Dahua"></div>
+        <div class="form-group cam-fields visible"><label>Nombre</label><input id="nombre" placeholder="Ej. CAM-01"></div>
+        <div class="form-group cam-fields visible"><label>Tipo de cámara</label><input id="tipo" placeholder="Ej. Domo, Bala, PTZ"></div>
+        <div class="form-group cam-fields visible"><label>Estado</label><select id="estado"><option>Activa</option><option>Falla</option></select></div>
+        <div class="form-group dvr-fields"><label>Nombre del DVR</label><input id="dvrNombre" placeholder="Ej. DVR-Corporativo-01" oninput="previewCanales()"></div>
+        <div class="form-group dvr-fields"><label>Número de canales</label><input id="dvrCanales" type="number" min="1" max="64" placeholder="Ej. 16" oninput="previewCanales()"></div>
+        <div class="form-group dvr-fields"><label>Modelo / Serie</label><input id="dvrModelo" placeholder="Ej. DS-7216HGHI-K2"></div>
+      </div>
+      <div class="dvr-preview" id="dvrPreview" style="display:none">
+        <div class="dvr-preview-title">Canales que se crearán:</div>
+        <div class="dvr-channels" id="dvrChannelPreview"></div>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-primary" onclick="guardarCamara()">Guardar cámara</button>
+        <button class="btn btn-primary" id="btnGuardarEquipo" onclick="guardarEquipo()">Guardar cámara</button>
         <button class="btn btn-gray" id="btnCancelar" onclick="cancelarEdicion()">Cancelar</button>
       </div>
     </div>
@@ -561,6 +634,22 @@
     </div>
   </div>
 
+  <!-- ALERTAS -->
+  <div id="alertas" class="section">
+    <div class="page-header"><h2>Alertas <span class="period-badge" id="alertasTotalBadge">0</span></h2></div>
+
+    <div class="alertas-config">
+      <span>Umbrales configurados:</span>
+      🔴 Incidencias sin mover: <span>5 días</span> &nbsp;|&nbsp;
+      🟡 Cámara en Falla sin incidencia: <span>7 días</span> &nbsp;|&nbsp;
+      🔵 Incidencia en proceso sin comentario: <span>3 días</span>
+    </div>
+
+    <div class="alertas-panel" id="alertasPanel">
+      <div class="alertas-empty">Calculando alertas…</div>
+    </div>
+  </div>
+
 </div>
 
 <!-- MODAL BITÁCORA -->
@@ -622,6 +711,7 @@ function mostrar(sec, btn) {
   if (btn) btn.classList.add('active');
   if (sec === 'reportes') aplicarFiltro();
   if (sec === 'historico') { renderHistIncidencias(); renderHistCamaras(); }
+  if (sec === 'alertas') renderAlertas();
 }
 function chipInc(estado) {
   const map = { abierta:'chip-abierta','en proceso':'chip-proceso',resuelta:'chip-resuelta' };
@@ -647,6 +737,60 @@ function msToLabel(ms) {
   if (hrs < 24) return rm > 0 ? `${hrs}h ${rm}m` : `${hrs}h`;
   const dias = Math.floor(hrs / 24), rh = hrs % 24;
   return rh > 0 ? `${dias}d ${rh}h` : `${dias}d`;
+}
+
+
+/* ── TIPO EQUIPO ── */
+let tipoEquipoActual = 'camara';
+
+function setTipoEquipo(tipo) {
+  tipoEquipoActual = tipo;
+  document.getElementById('pillCamara').classList.toggle('active', tipo==='camara');
+  document.getElementById('pillDVR').classList.toggle('active', tipo==='dvr');
+  document.querySelectorAll('.cam-fields').forEach(el=>el.classList.toggle('visible', tipo==='camara'));
+  document.querySelectorAll('.dvr-fields').forEach(el=>el.classList.toggle('visible', tipo==='dvr'));
+  document.getElementById('dvrPreview').style.display='none';
+  document.getElementById('btnGuardarEquipo').textContent = tipo==='dvr'?'Guardar DVR y canales':'Guardar cámara';
+  document.getElementById('formTitle').textContent = tipo==='dvr'?'Agregar DVR':'Agregar cámara';
+}
+
+function previewCanales() {
+  const n=parseInt(document.getElementById('dvrCanales').value);
+  const nombre=document.getElementById('dvrNombre').value.trim()||'DVR';
+  const preview=document.getElementById('dvrPreview');
+  if (!n||n<1) { preview.style.display='none'; return; }
+  preview.style.display='block';
+  document.getElementById('dvrChannelPreview').innerHTML=
+    Array.from({length:Math.min(n,64)},(_,i)=>`<span class="dvr-ch">${nombre} · CH-${String(i+1).padStart(2,'0')}</span>`).join('');
+}
+
+function guardarEquipo() { tipoEquipoActual==='dvr'?guardarDVR():guardarCamara(); }
+
+function guardarDVR() {
+  const sucursal=document.getElementById('sucursal').value.trim();
+  const marca=document.getElementById('marca').value.trim();
+  const dvrNom=document.getElementById('dvrNombre').value.trim();
+  const canales=parseInt(document.getElementById('dvrCanales').value);
+  const modelo=document.getElementById('dvrModelo').value.trim();
+  if (!sucursal||!dvrNom||!canales||canales<1) { toast('⚠ Completa sucursal, nombre del DVR y canales.'); return; }
+  if (canales>64) { toast('⚠ Máximo 64 canales.'); return; }
+  const batch=db.batch();
+  for (let i=1;i<=canales;i++) {
+    const ch=`CH-${String(i).padStart(2,'0')}`;
+    batch.set(db.collection('camaras').doc(), {
+      sucursal, marca, modelo:modelo||'', dvr:dvrNom,
+      nombre:`${dvrNom} · ${ch}`, canal:ch,
+      tipo:'DVR', esDVR:true, estado:'Activa'
+    });
+  }
+  batch.commit()
+    .then(()=>{ toast(`✅ ${canales} canales registrados.`); limpiarFormDVR(); })
+    .catch(()=>toast('Error al guardar el DVR.'));
+}
+
+function limpiarFormDVR() {
+  ['dvrNombre','dvrCanales','dvrModelo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const pr=document.getElementById('dvrPreview'); if(pr) pr.style.display='none';
 }
 
 /* ── cámaras ── */
@@ -677,8 +821,9 @@ function cancelarEdicion() {
   document.getElementById('btnCancelar').style.display='none';
 }
 function limpiarForm() {
-  ['sucursal','nombre','marca','tipo'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('estado').value='Activa';
+  ['sucursal','nombre','marca','tipo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const est=document.getElementById('estado'); if(est) est.value='Activa';
+  limpiarFormDVR();
 }
 function eliminar(id) {
   if (confirm('¿Eliminar esta cámara?'))
@@ -900,7 +1045,7 @@ function renderTablaCamaras(camaras) {
   if(!camaras.length){tbody.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
   tbody.innerHTML=camaras.map(c=>`<tr>
-    <td>${c.nombre}</td><td>${c.marca}</td><td>${c.tipo}</td><td>${c.sucursal}</td>
+    <td><strong>${c.nombre}</strong>${c.esDVR?' <span class="equipo-type-badge badge-dvr">DVR</span>':' <span class="equipo-type-badge badge-cam">CAM</span>'}</td><td>${c.marca}</td><td>${c.esDVR?(c.canal||'DVR'):(c.tipo||'—')}</td><td>${c.sucursal}</td>
     <td><span class="estado-chip ${c.estado==='Falla'?'chip-falla':'chip-activa'}">${c.estado}</span></td>
     <td style="display:flex;gap:6px">
       <button class="btn btn-sm btn-gray" onclick="editar('${c.id}','${c.sucursal}','${c.nombre}','${c.marca}','${c.tipo}','${c.estado}')">Editar</button>
@@ -1203,12 +1348,174 @@ function renderHistCamaras() {
   }).join('');
 }
 
+
+/* ── ALERTAS ── */
+const DIAS_INC_ESTANCADA   = 5;   // incidencia sin cambio de estado
+const DIAS_CAMARA_FALLA    = 7;   // cámara en Falla sin incidencia activa
+const DIAS_SIN_COMENTARIO  = 3;   // incidencia en proceso sin comentario en bitácora
+
+function diasDesde(timestamp) {
+  if (!timestamp) return 999;
+  const ms = Date.now() - timestamp.toDate().getTime();
+  return ms / (1000 * 60 * 60 * 24);
+}
+
+function calcularAlertas() {
+  const alertas = { rojas: [], amarillas: [], azules: [] };
+  const ahora = Date.now();
+
+  // 🔴 Incidencias abiertas o en proceso sin mover en +5 días
+  incidenciasCache.filter(i => (i.estado||'abierta') !== 'resuelta').forEach(i => {
+    const dias = diasDesde(i.fecha);
+    if (dias >= DIAS_INC_ESTANCADA) {
+      alertas.rojas.push({
+        icon: '🔴',
+        title: `${i.camara||'Cámara'} — ${i.sucursal||''}`,
+        sub: `Técnico: ${i.tecnico||'—'} · Estado: ${i.estado||'abierta'}`,
+        dias: Math.floor(dias),
+        label: `${Math.floor(dias)}d sin mover`,
+        tipo: 'inc_estancada',
+        id: i.id
+      });
+    }
+  });
+
+  // 🟡 Cámaras en Falla sin ninguna incidencia activa asociada hace +7 días
+  const camarasConIncActiva = new Set(
+    incidenciasCache.filter(i => (i.estado||'abierta') !== 'resuelta').map(i => i.camaraId).filter(Boolean)
+  );
+  camarasCache.filter(c => c.estado === 'Falla').forEach(c => {
+    if (!camarasConIncActiva.has(c.id)) {
+      // Buscar la última incidencia resuelta de esta cámara para saber cuánto lleva
+      const incsResueltas = incidenciasCache.filter(i => i.camaraId === c.id && i.estado === 'resuelta');
+      const ultimaCierre = incsResueltas.length
+        ? Math.max(...incsResueltas.map(i => i.fechaCierre ? i.fechaCierre.toDate().getTime() : 0))
+        : null;
+      const diasFalla = ultimaCierre
+        ? (ahora - ultimaCierre) / (1000 * 60 * 60 * 24)
+        : 999;
+      if (diasFalla >= DIAS_CAMARA_FALLA) {
+        alertas.amarillas.push({
+          icon: '🟡',
+          title: `${c.nombre} — ${c.sucursal||''}`,
+          sub: `Cámara en Falla sin incidencia activa registrada`,
+          dias: Math.floor(diasFalla) === 999 ? '?' : Math.floor(diasFalla),
+          label: diasFalla === 999 ? 'Sin incidencia' : `${Math.floor(diasFalla)}d en Falla`,
+          tipo: 'camara_sin_inc'
+        });
+      }
+    }
+  });
+
+  // 🔵 Incidencias "en proceso" sin comentario en bitácora en +3 días
+  incidenciasCache.filter(i => (i.estado||'abierta') === 'en proceso').forEach(i => {
+    const dias = diasDesde(i.fecha);
+    if (dias >= DIAS_SIN_COMENTARIO) {
+      alertas.azules.push({
+        icon: '🔵',
+        title: `${i.camara||'Cámara'} — ${i.sucursal||''}`,
+        sub: `En proceso · Técnico: ${i.tecnico||'—'}`,
+        dias: Math.floor(dias),
+        label: `${Math.floor(dias)}d en proceso`,
+        tipo: 'sin_comentario',
+        id: i.id
+      });
+    }
+  });
+
+  return alertas;
+}
+
+function alertaItemHTML(a, colorClass) {
+  const accion = (a.tipo === 'inc_estancada' || a.tipo === 'sin_comentario') && a.id
+    ? `<button class="btn btn-sm btn-gray" onclick="abrirModal('${a.id}','${(a.title||'').replace(/'/g,"\'")}')">Ver bitácora</button>`
+    : '';
+  return `<div class="alerta-item ${colorClass}">
+    <div class="alerta-icon">${a.icon}</div>
+    <div class="alerta-body">
+      <div class="alerta-title">${a.title}</div>
+      <div class="alerta-sub">${a.sub}</div>
+    </div>
+    <span class="alerta-dias ${colorClass}">${a.label}</span>
+    ${accion}
+  </div>`;
+}
+
+function renderAlertas() {
+  const { rojas, amarillas, azules } = calcularAlertas();
+  const total = rojas.length + amarillas.length + azules.length;
+
+  // Sidebar badge
+  const sbb = document.getElementById('sidebarAlertaBadge');
+  sbb.textContent = total;
+  sbb.style.display = total > 0 ? 'inline-flex' : 'none';
+
+  // Dashboard widget
+  const dashWrap = document.getElementById('dashAlertasWrap');
+  if (total > 0) {
+    dashWrap.style.display = 'block';
+    document.getElementById('dashAlertaTotal').textContent = total;
+    const tops = [...rojas.slice(0,2), ...amarillas.slice(0,1), ...azules.slice(0,1)];
+    document.getElementById('dashAlertasList').innerHTML = tops.map(a => {
+      const c = rojas.includes(a) ? 'red' : amarillas.includes(a) ? 'yellow' : 'blue';
+      return alertaItemHTML(a, c);
+    }).join('') + (total > tops.length ? `<div style="font-size:12px;color:#94a3b8;margin-top:8px;text-align:right">+${total - tops.length} alertas más</div>` : '');
+  } else {
+    dashWrap.style.display = 'none';
+  }
+
+  // Badge en título de la sección
+  document.getElementById('alertasTotalBadge').textContent = total;
+
+  // Panel completo en sección Alertas
+  const panel = document.getElementById('alertasPanel');
+  if (total === 0) {
+    panel.innerHTML = '<div class="alertas-empty">✅ Sin alertas activas. Todo está en orden.</div>';
+    return;
+  }
+
+  let html = '';
+
+  if (rojas.length) {
+    html += `<div class="alerta-section">
+      <div class="alerta-section-title">
+        Incidencias estancadas (sin mover en +${DIAS_INC_ESTANCADA} días)
+        <span class="alerta-count red">${rojas.length}</span>
+      </div>
+      <div class="alerta-items">${rojas.map(a => alertaItemHTML(a,'red')).join('')}</div>
+    </div>`;
+  }
+
+  if (amarillas.length) {
+    html += `<div class="alerta-section">
+      <div class="alerta-section-title">
+        Cámaras en Falla sin incidencia activa (+${DIAS_CAMARA_FALLA} días)
+        <span class="alerta-count yellow">${amarillas.length}</span>
+      </div>
+      <div class="alerta-items">${amarillas.map(a => alertaItemHTML(a,'yellow')).join('')}</div>
+    </div>`;
+  }
+
+  if (azules.length) {
+    html += `<div class="alerta-section">
+      <div class="alerta-section-title">
+        En proceso sin actividad reciente (+${DIAS_SIN_COMENTARIO} días)
+        <span class="alerta-count blue">${azules.length}</span>
+      </div>
+      <div class="alerta-items">${azules.map(a => alertaItemHTML(a,'blue')).join('')}</div>
+    </div>`;
+  }
+
+  panel.innerHTML = html;
+}
+
 /* ── Firestore listeners ── */
 db.collection('camaras').onSnapshot(snap=>{
   camarasCache=snap.docs.map(d=>({id:d.id,...d.data()}));
   renderDashboardGeneral(camarasCache);
   renderDashboardSucursal();
   renderTablaCamaras(camarasCache);
+  renderAlertas();
 });
 
 db.collection('incidencias').onSnapshot(snap=>{
@@ -1222,6 +1529,7 @@ db.collection('incidencias').onSnapshot(snap=>{
   const selH=document.getElementById('histFiltroTec'),valH=selH.value;
   selH.innerHTML='<option value="">Todos</option>'+tecs.map(t=>`<option${t===valH?' selected':''}>${t}</option>`).join('');
   if(document.getElementById('reportes').classList.contains('visible'))aplicarFiltro();
+  renderAlertas();
   if(document.getElementById('historico').classList.contains('visible')){ renderHistIncidencias(); }
 });
 
